@@ -52,11 +52,15 @@ nav a:hover { text-decoration: underline; }
 code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
 a { color: #1a1a4b; }
 hr { border: none; border-top: 1px solid #ddd; margin: 40px 0; }
+.prisma-container { overflow-x: auto; margin: 20px 0; text-align: center; }
+.prisma-container svg { max-width: 100%; height: auto; border: 1px solid #e0e0e0;
+                        border-radius: 6px; padding: 8px; background: white; }
 </style>
 </head><body>
 
 <nav>
   <a href="#db-overview">Database</a>
+  <a href="#prisma">PRISMA flow</a>
   <a href="#method">Methodology</a>
   <a href="#steep-framework">STEEP</a>
   <a href="#s41">4.1 Overview</a>
@@ -166,6 +170,136 @@ hr { border: none; border-top: 1px solid #ddd; margin: 40px 0; }
       </tbody>
     </table>
     </div>
+<h2 id="prisma">PRISMA 2020 flow diagram</h2>
+<div class="prose-block"><p>The diagram below shows the PRISMA 2020 search flow for the three-strategy procedure described in Methods Section 3. The colour coding mirrors the traceability report: <strong style='color:#3949AB'>blue boxes</strong> show the primary database screening pipeline (OpenAlex, Strategy 1 automated); <strong style='color:#1B5E20'>green boxes</strong> show records from other sources (Strategy 1 manual, Strategy 2 cross-sectoral foresight, Strategy 3 weak signal scan); <strong style='color:#B71C1C'>red/pink boxes</strong> show records removed or excluded at each stage; and the <strong style='color:#E65100'>amber box</strong> at the bottom shows the studies included in the final synthesis (n = 208).</p><p>The 720 records in the Eligibility phase are pending full-text review. They are tracked in <code>search_output/screened_included.csv</code> but are not counted in the quantitative analyses reported in Sections 4.2&ndash;4.4 of the manuscript.</p><div class="prisma-container"><svg width="854pt" height="867pt"
+ viewBox="0.00 0.00 854.00 867.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(39.6 827.6)">
+<title>PRISMA_2020</title>
+<polygon fill="white" stroke="none" points="-39.6,39.6 -39.6,-827.6 814.6,-827.6 814.6,39.6 -39.6,39.6"/>
+<g id="clust1" class="cluster">
+<title>cluster_id</title>
+<path fill="#f5f7ff" stroke="#3949ab" stroke-width="1.5" d="M184,-502C184,-502 755,-502 755,-502 761,-502 767,-508 767,-514 767,-514 767,-768 767,-768 767,-774 761,-780 755,-780 755,-780 184,-780 184,-780 178,-780 172,-774 172,-768 172,-768 172,-514 172,-514 172,-508 178,-502 184,-502"/>
+<text xml:space="preserve" text-anchor="middle" x="219.99" y="-767" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#3949ab">IDENTIFICATION</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_scr</title>
+<path fill="#f5f7ff" stroke="#3949ab" stroke-width="1.5" d="M20,-216C20,-216 278,-216 278,-216 284,-216 290,-222 290,-228 290,-228 290,-482 290,-482 290,-488 284,-494 278,-494 278,-494 20,-494 20,-494 14,-494 8,-488 8,-482 8,-482 8,-228 8,-228 8,-222 14,-216 20,-216"/>
+<text xml:space="preserve" text-anchor="middle" x="44.06" y="-481" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#3949ab">SCREENING</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_elig</title>
+<path fill="#f5f7ff" stroke="#3949ab" stroke-width="1.5" d="M335,-236C335,-236 627,-236 627,-236 633,-236 639,-242 639,-248 639,-248 639,-344 639,-344 639,-350 633,-356 627,-356 627,-356 335,-356 335,-356 329,-356 323,-350 323,-344 323,-344 323,-248 323,-248 323,-242 329,-236 335,-236"/>
+<text xml:space="preserve" text-anchor="middle" x="360.43" y="-343" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#3949ab">ELIGIBILITY</text>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_inc</title>
+<path fill="#fffdf5" stroke="#e65100" stroke-width="1.5" d="M382,-8C382,-8 696,-8 696,-8 702,-8 708,-14 708,-20 708,-20 708,-196 708,-196 708,-202 702,-208 696,-208 696,-208 382,-208 382,-208 376,-208 370,-202 370,-196 370,-196 370,-20 370,-20 370,-14 376,-8 382,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="403.55" y="-195" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#e65100">INCLUDED</text>
+</g>
+<!-- db -->
+<g id="node1" class="node">
+<title>db</title>
+<path fill="#e8f0fe" stroke="#3949ab" stroke-width="1.8" d="M375.82,-734C375.82,-734 200.18,-734 200.18,-734 194.18,-734 188.18,-728 188.18,-722 188.18,-722 188.18,-658 188.18,-658 188.18,-652 194.18,-646 200.18,-646 200.18,-646 375.82,-646 375.82,-646 381.82,-646 387.82,-652 387.82,-658 387.82,-658 387.82,-722 387.82,-722 387.82,-728 381.82,-734 375.82,-734"/>
+<text xml:space="preserve" text-anchor="start" x="200.18" y="-718" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Records identified from databases</text>
+<text xml:space="preserve" text-anchor="start" x="200.18" y="-697" font-family="Helvetica,sans-Serif" font-size="10.00">OpenAlex API &#45;&#45; 7 query strings</text>
+<text xml:space="preserve" text-anchor="start" x="200.18" y="-677" font-family="Helvetica,sans-Serif" font-size="10.00">Up to 300 results per query (polite pool)</text>
+<text xml:space="preserve" text-anchor="start" x="200.18" y="-658" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">n = 2,100</text>
+</g>
+<!-- dedup -->
+<g id="node3" class="node">
+<title>dedup</title>
+<path fill="#ffebee" stroke="#b71c1c" stroke-width="1.4" d="M493.59,-586C493.59,-586 200.41,-586 200.41,-586 194.41,-586 188.41,-580 188.41,-574 188.41,-574 188.41,-530 188.41,-530 188.41,-524 194.41,-518 200.41,-518 200.41,-518 493.59,-518 493.59,-518 499.59,-518 505.59,-524 505.59,-530 505.59,-530 505.59,-574 505.59,-574 505.59,-580 499.59,-586 493.59,-586"/>
+<text xml:space="preserve" text-anchor="start" x="200.41" y="-570" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Records removed before screening</text>
+<text xml:space="preserve" text-anchor="start" x="200.41" y="-549" font-family="Helvetica,sans-Serif" font-size="10.00">Duplicate records removed: n = 479</text>
+<text xml:space="preserve" text-anchor="start" x="200.41" y="-529" font-family="Helvetica,sans-Serif" font-size="10.00">Method: exact DOI match + fuzzy title (RapidFuzz, 90% threshold)</text>
+</g>
+<!-- db&#45;&gt;dedup -->
+<g id="edge1" class="edge">
+<title>db&#45;&gt;dedup</title>
+<path fill="none" stroke="#3949ab" stroke-width="1.8" d="M288.12,-645.2C288.12,-645.2 288.12,-598.25 288.12,-598.25"/>
+<polygon fill="#3949ab" stroke="#3949ab" stroke-width="1.8" points="291.27,-598.25 288.12,-589.25 284.97,-598.25 291.27,-598.25"/>
+</g>
+<!-- other_id -->
+<g id="node2" class="node">
+<title>other_id</title>
+<path fill="#e8f5e9" stroke="#1b5e20" stroke-width="1.8" d="M739.3,-744C739.3,-744 464.7,-744 464.7,-744 458.7,-744 452.7,-738 452.7,-732 452.7,-732 452.7,-648 452.7,-648 452.7,-642 458.7,-636 464.7,-636 464.7,-636 739.3,-636 739.3,-636 745.3,-636 751.3,-642 751.3,-648 751.3,-648 751.3,-732 751.3,-732 751.3,-738 745.3,-744 739.3,-744"/>
+<text xml:space="preserve" text-anchor="start" x="464.7" y="-728" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Records identified from other sources</text>
+<text xml:space="preserve" text-anchor="start" x="464.7" y="-707" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 1 &#45;&#45; manual database search: &#160;&#160;&#160;n = 60</text>
+<text xml:space="preserve" text-anchor="start" x="464.7" y="-687" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 2 &#45;&#45; cross&#45;sectoral foresight: &#160;n = 145</text>
+<text xml:space="preserve" text-anchor="start" x="464.7" y="-667" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 3 &#45;&#45; weak signal horizon scan: &#160;n = 3 (initial)</text>
+<text xml:space="preserve" text-anchor="start" x="464.7" y="-648" font-family="Helvetica,sans-Serif" font-style="italic" font-size="10.00">Strategies 2 and 3 screened separately (see Methods 3.3&#45;3.4)</text>
+</g>
+<!-- included -->
+<g id="node7" class="node">
+<title>included</title>
+<path fill="#fff8e1" stroke="#e65100" stroke-width="2.2" d="M679.63,-172C679.63,-172 398.37,-172 398.37,-172 392.37,-172 386.37,-166 386.37,-160 386.37,-160 386.37,-36 386.37,-36 386.37,-30 392.37,-24 398.37,-24 398.37,-24 679.63,-24 679.63,-24 685.63,-24 691.63,-30 691.63,-36 691.63,-36 691.63,-160 691.63,-160 691.63,-166 685.63,-172 679.63,-172"/>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-156" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Studies included in synthesis</text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-135" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 1 &#160;(peer&#45;reviewed, manual screening): &#160;&#160;n = 60</text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-115" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 2 &#160;(cross&#45;sectoral foresight, manual): &#160;n = 145</text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-95" font-family="Helvetica,sans-Serif" font-size="10.00">Strategy 3 &#160;(weak signals, initial scan): &#160;&#160;&#160;&#160;&#160;&#160;&#160;n = 3</text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-75" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-56" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Total included in analysis: n = 208</text>
+<text xml:space="preserve" text-anchor="start" x="398.37" y="-36" font-family="Helvetica,sans-Serif" font-style="italic" font-size="10.00">Note: 720 papers from database search pending full&#45;text review</text>
+</g>
+<!-- other_id&#45;&gt;included -->
+<g id="edge6" class="edge">
+<title>other_id&#45;&gt;included</title>
+<path fill="none" stroke="#1b5e20" stroke-width="1.4" stroke-dasharray="5,2" d="M657.49,-635.1C657.49,-635.1 657.49,-183.2 657.49,-183.2"/>
+<polygon fill="#1b5e20" stroke="#1b5e20" stroke-width="1.4" points="660.29,-183.2 657.49,-175.2 654.69,-183.2 660.29,-183.2"/>
+</g>
+<!-- screened -->
+<g id="node4" class="node">
+<title>screened</title>
+<path fill="#e8f0fe" stroke="#3949ab" stroke-width="1.8" d="M262.2,-458C262.2,-458 63.8,-458 63.8,-458 57.8,-458 51.8,-452 51.8,-446 51.8,-446 51.8,-402 51.8,-402 51.8,-396 57.8,-390 63.8,-390 63.8,-390 262.2,-390 262.2,-390 268.2,-390 274.2,-396 274.2,-402 274.2,-402 274.2,-446 274.2,-446 274.2,-452 268.2,-458 262.2,-458"/>
+<text xml:space="preserve" text-anchor="start" x="63.8" y="-442" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Records screened</text>
+<text xml:space="preserve" text-anchor="start" x="63.8" y="-421" font-family="Helvetica,sans-Serif" font-size="10.00">Title and abstract review by primary reviewer</text>
+<text xml:space="preserve" text-anchor="start" x="63.8" y="-402" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">n = 1,621</text>
+</g>
+<!-- dedup&#45;&gt;screened -->
+<g id="edge2" class="edge">
+<title>dedup&#45;&gt;screened</title>
+<path fill="none" stroke="#3949ab" stroke-width="1.8" d="M231.3,-517.36C231.3,-517.36 231.3,-470.39 231.3,-470.39"/>
+<polygon fill="#3949ab" stroke="#3949ab" stroke-width="1.8" points="234.46,-470.39 231.3,-461.39 228.16,-470.39 234.46,-470.39"/>
+</g>
+<!-- excl_ta -->
+<g id="node5" class="node">
+<title>excl_ta</title>
+<path fill="#ffebee" stroke="#b71c1c" stroke-width="1.4" d="M261.84,-340C261.84,-340 36.16,-340 36.16,-340 30.16,-340 24.16,-334 24.16,-328 24.16,-328 24.16,-244 24.16,-244 24.16,-238 30.16,-232 36.16,-232 36.16,-232 261.84,-232 261.84,-232 267.84,-232 273.84,-238 273.84,-244 273.84,-244 273.84,-328 273.84,-328 273.84,-334 267.84,-340 261.84,-340"/>
+<text xml:space="preserve" text-anchor="start" x="36.16" y="-324" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Records excluded at title/abstract</text>
+<text xml:space="preserve" text-anchor="start" x="36.16" y="-303" font-family="Helvetica,sans-Serif" font-size="10.00">n = 901</text>
+<text xml:space="preserve" text-anchor="start" x="36.16" y="-283" font-family="Helvetica,sans-Serif" font-size="10.00">Reason 1: not fisheries or marine capture fisheries</text>
+<text xml:space="preserve" text-anchor="start" x="36.16" y="-263" font-family="Helvetica,sans-Serif" font-size="10.00">Reason 2: no future&#45;oriented analytical perspective</text>
+<text xml:space="preserve" text-anchor="start" x="36.16" y="-243" font-family="Helvetica,sans-Serif" font-size="10.00"> &#160;&#160;(retrospective or purely descriptive)</text>
+</g>
+<!-- screened&#45;&gt;excl_ta -->
+<g id="edge3" class="edge">
+<title>screened&#45;&gt;excl_ta</title>
+<path fill="none" stroke="#b71c1c" stroke-width="1.4" stroke-dasharray="5,2" d="M162.82,-389.18C162.82,-389.18 162.82,-350.81 162.82,-350.81"/>
+<polygon fill="#b71c1c" stroke="#b71c1c" stroke-width="1.4" points="165.62,-350.81 162.82,-342.81 160.02,-350.81 165.62,-350.81"/>
+</g>
+<!-- fulltext -->
+<g id="node6" class="node">
+<title>fulltext</title>
+<path fill="#e8f0fe" stroke="#3949ab" stroke-width="1.8" d="M611.35,-320C611.35,-320 350.65,-320 350.65,-320 344.65,-320 338.65,-314 338.65,-308 338.65,-308 338.65,-264 338.65,-264 338.65,-258 344.65,-252 350.65,-252 350.65,-252 611.35,-252 611.35,-252 617.35,-252 623.35,-258 623.35,-264 623.35,-264 623.35,-308 623.35,-308 623.35,-314 617.35,-320 611.35,-320"/>
+<text xml:space="preserve" text-anchor="start" x="350.65" y="-304" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">Reports assessed for eligibility (full&#45;text)</text>
+<text xml:space="preserve" text-anchor="start" x="350.65" y="-284" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">n = 720 &#45;&#45; PENDING</text>
+<text xml:space="preserve" text-anchor="start" x="350.65" y="-264" font-family="Helvetica,sans-Serif" font-style="italic" font-size="10.00">Not included in quantitative analyses reported in this article</text>
+</g>
+<!-- screened&#45;&gt;fulltext -->
+<g id="edge4" class="edge">
+<title>screened&#45;&gt;fulltext</title>
+<path fill="none" stroke="#3949ab" stroke-width="1.8" d="M274.77,-424C344.9,-424 422.12,-424 422.12,-424 422.12,-424 422.12,-332.55 422.12,-332.55"/>
+<polygon fill="#3949ab" stroke="#3949ab" stroke-width="1.8" points="425.27,-332.55 422.12,-323.55 418.97,-332.55 425.27,-332.55"/>
+</g>
+<!-- fulltext&#45;&gt;included -->
+<g id="edge5" class="edge">
+<title>fulltext&#45;&gt;included</title>
+<path fill="none" stroke="#3949ab" stroke-width="1.8" d="M504.86,-251.52C504.86,-251.52 504.86,-184.5 504.86,-184.5"/>
+<polygon fill="#3949ab" stroke="#3949ab" stroke-width="1.8" points="508.01,-184.5 504.86,-175.5 501.71,-184.5 508.01,-184.5"/>
+</g>
+</g>
+</svg>
+</div></div>
 <h2 id="method">Classification methodology</h2>
 <div class="prose-block">
     <p>Each entry in both the megatrend and fisheries futures databases was assigned to one

@@ -18,10 +18,11 @@ from datetime import date
 
 import pandas as pd
 
-BASE_DIR  = Path(__file__).parent.parent
-DATA_FILE = BASE_DIR / "data" / "manual_literature_search.xlsx"
-OUT_FILE  = BASE_DIR / "docs" / "Traceability_Report.html"
-TODAY     = date.today().isoformat()
+BASE_DIR       = Path(__file__).parent.parent
+DATA_FILE      = BASE_DIR / "data" / "manual_literature_search.xlsx"
+OUT_FILE       = BASE_DIR / "docs" / "Traceability_Report.html"
+PRISMA_SVG     = BASE_DIR / "docs" / "PRISMA_flow.svg"
+TODAY          = date.today().isoformat()
 
 # ── STEEP rules (must match excel_analysis.py) ────────────────
 STEEP_RULES = {
@@ -313,6 +314,45 @@ def build_report(mg, ff, sg):
       </tbody>
     </table>
     """))
+
+    # ═════════════════════════════════════════════════════════
+    # PRISMA 2020 FLOW DIAGRAM
+    # ═════════════════════════════════════════════════════════
+    blocks.append('<h2 id="prisma">PRISMA 2020 flow diagram</h2>')
+    # PRISMA numbers (keep in sync with generate_prisma.py)
+    _P_IDENTIFIED = 2_100
+    _P_DUP        = 479
+    _P_SCREENED   = 1_621
+    _P_EXCL_TA    = 901
+    _P_PENDING    = 720
+    _P_TOTAL_INC  = 208   # 60 + 145 + 3
+
+    if PRISMA_SVG.exists():
+        raw_svg = PRISMA_SVG.read_text(encoding="utf-8")
+        if "<?xml" in raw_svg:
+            raw_svg = raw_svg[raw_svg.index("<svg"):]
+        blocks.append(prose_block(
+            "<p>The diagram below shows the PRISMA 2020 search flow for the three-strategy "
+            "procedure described in Methods Section 3. The colour coding mirrors the "
+            "traceability report: <strong style='color:#3949AB'>blue boxes</strong> show the "
+            "primary database screening pipeline (OpenAlex, Strategy 1 automated); "
+            "<strong style='color:#1B5E20'>green boxes</strong> show records from other sources "
+            "(Strategy 1 manual, Strategy 2 cross-sectoral foresight, Strategy 3 weak signal "
+            "scan); <strong style='color:#B71C1C'>red/pink boxes</strong> show records removed or "
+            "excluded at each stage; and the <strong style='color:#E65100'>amber box</strong> at "
+            "the bottom shows the studies included in the final synthesis "
+            f"(n = {_P_TOTAL_INC}).</p>"
+            f"<p>The {_P_PENDING} records in the Eligibility phase are pending full-text review. "
+            "They are tracked in <code>search_output/screened_included.csv</code> but are not "
+            "counted in the quantitative analyses reported in Sections 4.2&ndash;4.4 of the "
+            "manuscript.</p>"
+            f'<div class="prisma-container">{raw_svg}</div>'
+        ))
+    else:
+        blocks.append(prose_block(
+            "<p><em>PRISMA flow diagram not found &mdash; "
+            "run <code>generate_prisma.py</code> first to generate it.</em></p>"
+        ))
 
     # ═════════════════════════════════════════════════════════
     # METHODOLOGY NOTE
@@ -887,11 +927,15 @@ nav a:hover { text-decoration: underline; }
 code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
 a { color: #1a1a4b; }
 hr { border: none; border-top: 1px solid #ddd; margin: 40px 0; }
+.prisma-container { overflow-x: auto; margin: 20px 0; text-align: center; }
+.prisma-container svg { max-width: 100%; height: auto; border: 1px solid #e0e0e0;
+                        border-radius: 6px; padding: 8px; background: white; }
 """
 
 NAV = """
 <nav>
   <a href="#db-overview">Database</a>
+  <a href="#prisma">PRISMA flow</a>
   <a href="#method">Methodology</a>
   <a href="#steep-framework">STEEP</a>
   <a href="#s41">4.1 Overview</a>
