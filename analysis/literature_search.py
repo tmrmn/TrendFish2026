@@ -90,8 +90,14 @@ OPENALEX_EMAIL  = "tsz000@uit.no"   # used for OpenAlex polite pool
 MAX_RESULTS_PER_QUERY = 300         # cap per query per database
 SEMANTIC_SCHOLAR_LIMIT = 100        # S2 returns max 100 per request
 
-# Output directory
-OUTPUT_DIR = Path(__file__).parent / "search_output"
+# Semantic Scholar API key (optional).
+# Leave as None to skip S2 and rely on OpenAlex only.
+# Once you receive your key, paste it here and re-run the script.
+# Register at: https://www.semanticscholar.org/product/api
+SEMANTIC_SCHOLAR_API_KEY: str | None = None
+
+# Output directory (one level up from analysis/ so it sits at project root)
+OUTPUT_DIR = Path(__file__).parent.parent / "search_output"
 
 # ============================================================
 # SECTION 2 — SEARCH FUNCTIONS
@@ -172,15 +178,19 @@ def search_semantic_scholar(query: str, limit: int = SEMANTIC_SCHOLAR_LIMIT) -> 
     Query the Semantic Scholar Academic Graph API.
 
     Semantic Scholar (Kinney et al., 2023; https://www.semanticscholar.org)
-    is a free scholarly search engine with a public API. The free tier
-    returns up to 100 results per request without an API key.
-    Rate limit: ~100 requests per 5 minutes without a key.
+    is a free scholarly search engine with a public API.
+    Requires SEMANTIC_SCHOLAR_API_KEY to be set; skipped otherwise.
+    Rate limit with key: 1 request/second.
 
     Returns
     -------
-    list of raw Semantic Scholar paper objects
+    list of raw Semantic Scholar paper objects, or [] if key not set
     """
+    if SEMANTIC_SCHOLAR_API_KEY is None:
+        return []
+
     base_url = "https://api.semanticscholar.org/graph/v1/paper/search"
+    headers = {"x-api-key": SEMANTIC_SCHOLAR_API_KEY}
     params = {
         "query":  query,
         "limit":  min(limit, 100),
@@ -189,12 +199,12 @@ def search_semantic_scholar(query: str, limit: int = SEMANTIC_SCHOLAR_LIMIT) -> 
             "externalIds,openAccessPdf,publicationTypes,fieldsOfStudy"
         ),
     }
-    max_retries = 4
+    max_retries = 3
     for attempt in range(max_retries):
         try:
-            r = requests.get(base_url, params=params, timeout=30)
+            r = requests.get(base_url, params=params, headers=headers, timeout=30)
             if r.status_code == 429:
-                wait = 60 * (attempt + 1)
+                wait = 10 * (attempt + 1)
                 print(f"\n    [Semantic Scholar] Rate limit hit. Waiting {wait}s ...", end=" ", flush=True)
                 time.sleep(wait)
                 continue
@@ -202,7 +212,7 @@ def search_semantic_scholar(query: str, limit: int = SEMANTIC_SCHOLAR_LIMIT) -> 
             return r.json().get("data", [])
         except requests.RequestException as e:
             print(f"\n    [Semantic Scholar] Request error (attempt {attempt+1}): {e}")
-            time.sleep(10)
+            time.sleep(5)
     print("\n    [Semantic Scholar] Failed after retries - skipping query.")
     return []
 
@@ -710,20 +720,22 @@ def main() -> None:
         time.sleep(0.3)
 
         # — Semantic Scholar —
-        print("  Searching Semantic Scholar …", end=" ", flush=True)
-        ss_raw = search_semantic_scholar(query)
-        ss_norm = normalize_semantic_scholar(ss_raw, query)
-        n_ss += len(ss_norm)
-        all_records.extend(ss_norm)
-        print(f"{len(ss_norm)} records")
-
-        search_log.append({
-            "database":  "Semantic Scholar",
-            "query":     query,
-            "date":      search_date,
-            "n_results": len(ss_norm),
-            "endpoint":  "https://api.semanticscholar.org/graph/v1/paper/search",
-        })
+        if SEMANTIC_SCHOLAR_API_KEY is None:
+            print("  Semantic Scholar: skipped (no API key set)")
+        else:
+            print("  Searching Semantic Scholar …", end=" ", flush=True)
+            ss_raw = search_semantic_scholar(query)
+            ss_norm = normalize_semantic_scholar(ss_raw, query)
+            n_ss += len(ss_norm)
+            all_records.extend(ss_norm)
+            print(f"{len(ss_norm)} records")
+            search_log.append({
+                "database":  "Semantic Scholar",
+                "query":     query,
+                "date":      search_date,
+                "n_results": len(ss_norm),
+                "endpoint":  "https://api.semanticscholar.org/graph/v1/paper/search",
+            })
 
         time.sleep(4.0)  # respect Semantic Scholar rate limit (~100 req/5min)
 
