@@ -1,187 +1,526 @@
 <!DOCTYPE html><html lang='en'><head>
 <meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
 <title>Evidence Traceability Report — Fisheries Trends 2026</title>
 <style>
-body { font-family: Georgia, serif; font-size: 14px; max-width: 1100px;
-       margin: 40px auto; padding: 0 20px; color: #222; line-height: 1.6; }
-h1   { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 8px; }
-h2   { font-size: 1.15em; margin-top: 36px; color: #1a1a4b; border-left: 4px solid #1a1a4b;
-       padding-left: 10px; }
-.claim-block { background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;
-               padding: 14px 18px; margin: 18px 0; }
-.claim-text  { font-style: italic; font-size: 1.0em; color: #333; margin-bottom: 6px; }
-.claim-note  { font-size: 0.88em; color: #666; margin-bottom: 10px; }
+* { box-sizing: border-box; }
+body { font-family: Georgia, serif; font-size: 14px; max-width: 1160px;
+       margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.7;
+       background: #fff; }
+h1   { font-size: 1.5em; border-bottom: 3px solid #1a1a4b; padding-bottom: 10px;
+       margin-bottom: 4px; }
+.subtitle { color: #666; font-size: 0.9em; margin-bottom: 24px; }
+h2   { font-size: 1.1em; margin-top: 44px; color: #1a1a4b;
+       border-left: 5px solid #1a1a4b; padding-left: 12px;
+       background: #f0f2fa; padding-top: 6px; padding-bottom: 6px; }
+p    { margin: 0.6em 0; }
+.prose-block { margin: 12px 0 20px 0; padding: 0 2px; }
+.method-note { background: #fffde7; border-left: 4px solid #f9a825;
+               padding: 12px 16px; margin: 16px 0; border-radius: 4px; font-size: 0.92em; }
+.steep-card  { margin: 6px 0; }
+.claim-block { background: #f7f8fc; border: 1px solid #d0d5e8;
+               border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+.claim-label { font-size: 0.7em; font-weight: bold; letter-spacing: 0.1em;
+               text-transform: uppercase; color: #1a1a4b; margin-bottom: 4px; }
+.claim-text  { font-style: italic; font-size: 1.02em; color: #222;
+               margin-bottom: 10px; border-left: 3px solid #1a1a4b;
+               padding-left: 10px; }
+.claim-rationale { font-size: 0.93em; color: #333; margin-bottom: 10px;
+                   background: #fff; padding: 10px 14px; border-radius: 4px;
+                   border: 1px solid #e0e0e0; }
+.claim-query { font-size: 0.83em; color: #555; margin-bottom: 8px; }
 .badge       { display: inline-block; background: #1a1a4b; color: white;
-               font-size: 0.78em; padding: 1px 7px; border-radius: 10px;
-               font-style: normal; vertical-align: middle; margin-left: 6px; }
-.zero-result { color: #155724; background: #d4edda; padding: 8px 12px;
-               border-radius: 4px; font-style: italic; }
-table.evidence-table { border-collapse: collapse; width: 100%; font-size: 0.86em;
-                        margin-top: 6px; }
-table.evidence-table th { background: #1a1a4b; color: white; padding: 6px 8px;
-                           text-align: left; font-weight: normal; }
-table.evidence-table td { padding: 4px 8px; border-bottom: 1px solid #ccc;
+               font-size: 0.75em; padding: 2px 8px; border-radius: 10px;
+               font-style: normal; vertical-align: middle; margin-left: 8px; }
+.zero-result { color: #155724; background: #d4edda; padding: 10px 14px;
+               border-radius: 4px; font-style: italic; border: 1px solid #c3e6cb; }
+table.evidence-table { border-collapse: collapse; width: 100%; font-size: 0.85em;
+                        margin-top: 8px; }
+table.evidence-table th { background: #1a1a4b; color: white; padding: 7px 10px;
+                           text-align: left; font-weight: normal; white-space: nowrap; }
+table.evidence-table td { padding: 5px 10px; border-bottom: 1px solid #ddd;
                            vertical-align: top; }
-table.evidence-table tr:hover td { filter: brightness(0.95); }
-nav  { position: sticky; top: 0; background: white; border-bottom: 1px solid #ddd;
-       padding: 8px 0; font-size: 0.88em; }
-nav a { margin-right: 12px; color: #1a1a4b; text-decoration: none; }
+table.evidence-table tr:hover td { filter: brightness(0.96); }
+nav  { position: sticky; top: 0; background: rgba(255,255,255,0.97);
+       border-bottom: 2px solid #1a1a4b; padding: 8px 0; font-size: 0.85em;
+       z-index: 100; }
+nav a { margin-right: 14px; color: #1a1a4b; text-decoration: none; font-style: normal; }
 nav a:hover { text-decoration: underline; }
-.legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; font-size: 0.85em; }
-.legend span { padding: 3px 10px; border-radius: 4px; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; font-size: 0.85em;
+          align-items: center; }
+.legend span { padding: 3px 12px; border-radius: 12px; border: 1px solid #ccc; }
+code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+a { color: #1a1a4b; }
+hr { border: none; border-top: 1px solid #ddd; margin: 40px 0; }
 </style>
 </head><body>
 
 <nav>
+  <a href="#db-overview">Database</a>
+  <a href="#method">Methodology</a>
+  <a href="#steep-framework">STEEP</a>
   <a href="#s41">4.1 Overview</a>
-  <a href="#s42">4.2 Megatrend Drivers</a>
-  <a href="#s42b">4.2 Fisheries Drivers</a>
+  <a href="#s42">4.2 Megatrends</a>
+  <a href="#s42b">4.2 Fisheries</a>
+  <a href="#gap">Gap analysis</a>
   <a href="#s43">4.3 Trends</a>
   <a href="#s44">4.4 Signals</a>
 </nav>
 
 <h1>Evidence Traceability Report</h1>
-<p>This report links every quantitative claim in the Results section to the specific rows in the Excel database (<code>manual_literature_search.xlsx</code>) that support it. Row colours reflect STEEP classification.</p>
+<p class='subtitle'>Drivers, Trends, and Signals in Fisheries Research &mdash; Szczepanska (2026) &mdash; generated 2026-05-08</p>
+
+    <p>This report provides a complete, source-by-source account of the evidence that underlies
+    every quantitative claim in the Results section of the manuscript
+    <em>Drivers, Trends, and Signals in Fisheries Research</em>
+    (Szczepanska, 2026). Its purpose is threefold:</p>
+    <ol>
+      <li><strong>Transparency:</strong> every percentage figure, count, and thematic claim in the
+      manuscript can be traced back to the specific rows in the Excel database from which it was
+      derived.</li>
+      <li><strong>Reproducibility:</strong> re-running <code>generate_traceability.py</code> after
+      any update to the database regenerates this report with current figures, keeping claims and
+      evidence in sync throughout the review process.</li>
+      <li><strong>Peer review support:</strong> during peer review, this report allows reviewers
+      and co-authors to inspect the underlying data for any claim without opening the Excel file
+      directly.</li>
+    </ol>
+    <p>The report is organised to mirror the Results section of the manuscript.
+    Each <em>Claim</em> block shows: (i) the exact wording from the manuscript in italics;
+    (ii) an explanatory rationale discussing what the claim means and why it matters;
+    (iii) the data query that produced the evidence; and (iv) the matching rows from the
+    database. Row background colours reflect STEEP classification (see legend below).</p>
+    <p><strong>Database at a glance:</strong> 145 megatrend entries &middot;
+    60 fisheries futures entries &middot; 5 signal entries &middot;
+    720 OpenAlex candidates pending full-text screening.</p>
+    
 
 <div class="legend">
-  <strong>STEEP colours:</strong>
+  <strong>Row colours:</strong>
   <span style="background:#d4edda">Environmental</span>
   <span style="background:#cce5ff">Technological</span>
   <span style="background:#fff3cd">Economic</span>
   <span style="background:#f8d7da">Social</span>
   <span style="background:#e2d9f3">Political</span>
   <span style="background:#e9ecef">Other / Unclassified</span>
+  <span style="background:#fce4ec">Signal</span>
 </div>
 
-<h2 id="s41">4.1 Overview of search outcomes</h2>
+<h2 id="db-overview">Database overview</h2>
+<div class="prose-block">
+    <p>The evidence base for this review is stored in a single Excel workbook
+    (<code>manual_literature_search.xlsx</code>) with three active sheets.
+    Each sheet corresponds to one of the three search strategies described in the Methods section.</p>
+
+    <table class="evidence-table">
+      <thead><tr>
+        <th>Sheet name</th><th>Search strategy</th><th>Entries (used)</th>
+        <th>Source types</th><th>Period covered</th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:#d4edda">
+          <td><code>(Mega-)trends and drivers</code></td>
+          <td>Strategy 2 — Cross-sectoral foresight</td>
+          <td><strong>145</strong></td>
+          <td>Academic articles, consultancy reports, government publications, NGO reports, books</td>
+          <td>Mainly 2010–2024</td>
+        </tr>
+        <tr style="background:#cce5ff">
+          <td><code>Futures of Fisheries</code></td>
+          <td>Strategy 1 — Peer-reviewed fisheries futures</td>
+          <td><strong>60</strong> (manual screening)</td>
+          <td>Peer-reviewed academic articles</td>
+          <td>2000–2024</td>
+        </tr>
+        <tr style="background:#fce4ec">
+          <td><code>Signals of Future Fisheries</code></td>
+          <td>Strategy 3 — Weak signal horizon scan</td>
+          <td><strong>5</strong> (living document)</td>
+          <td>Grey literature, news, industry reports</td>
+          <td>2019–present</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>In addition to these manually curated entries, an automated search via the
+    <a href="https://openalex.org" target="_blank">OpenAlex</a> API (Strategy 1) retrieved
+    2,100 records using seven query strings. After deduplication (479 removed), 1,621 unique
+    records were screened by title and abstract, yielding <strong>720 candidate papers</strong>
+    that passed initial screening and are <em>pending full-text eligibility assessment</em>.
+    These 720 papers are not included in the quantitative analyses below but are documented
+    in <code>search_output/screened_included.csv</code>.</p>
+
+    <p>Column schema (all sheets share the same structure):</p>
+    <table class="evidence-table">
+      <thead><tr><th>Column</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>Trend</code></td><td>The driver, trend, or signal label as entered by the reviewer</td></tr>
+        <tr><td><code>Details</code></td><td>Free-text description or elaboration of the entry</td></tr>
+        <tr><td><code>Author</code></td><td>Author(s) of the source document</td></tr>
+        <tr><td><code>Source</code></td><td>Publication venue, URL, or institution</td></tr>
+        <tr><td><code>Title</code></td><td>Full title of the source document</td></tr>
+        <tr><td><code>Comments</code></td><td>Reviewer notes and annotations</td></tr>
+        <tr><td><code>DOI</code></td><td>Digital Object Identifier (where available)</td></tr>
+        <tr><td><code>Year</code></td><td>Publication year</td></tr>
+        <tr><td><code>Type</code></td><td>Source type (Article, Government, Consultancy, etc.)</td></tr>
+      </tbody>
+    </table>
+    </div>
+<h2 id="method">Classification methodology</h2>
+<div class="prose-block">
+    <p>Each entry in both the megatrend and fisheries futures databases was assigned to one
+    of five STEEP categories (Social, Technological, Economic, Environmental, Political) using
+    automated keyword matching. The algorithm concatenates the <code>Trend</code>,
+    <code>Details</code>, and <code>Title</code> fields into a single string, converts to
+    lowercase, and applies a <strong>first-match rule</strong>: the entry is assigned to the
+    first STEEP category whose keyword list contains a matching substring.</p>
+
+    <p>The keyword lists used for classification (first five keywords per category shown):</p>
+    <ul><li><strong>Environmental</strong>: <em>climate</em>, <em>environment</em>, <em>biodiversity</em>, <em>ecosystem</em>, <em>ocean</em> &hellip;</li><li><strong>Technological</strong>: <em>technolog</em>, <em>digital</em>, <em>automation</em>, <em>artificial intelligence</em>, <em>ai </em> &hellip;</li><li><strong>Economic</strong>: <em>economic</em>, <em>trade</em>, <em>market</em>, <em>finance</em>, <em>fiscal</em> &hellip;</li><li><strong>Social</strong>: <em>social</em>, <em>demograph</em>, <em>population</em>, <em>urban</em>, <em>aging</em> &hellip;</li><li><strong>Political</strong>: <em>politic</em>, <em>governance</em>, <em>geopolit</em>, <em>security</em>, <em>power</em> &hellip;</li></ul>
+
+    <p>Entries that matched no keyword in any category — or for which all three text fields
+    were empty — were assigned to a residual <strong>Other / Unclassified</strong> category.
+    This includes two analytically distinct groups: (1) entries with insufficient metadata
+    (no trend label, title, or details recorded in the database), and (2) entries describing
+    methodological approaches — such as "Scenario" or "Trend and drivers" — rather than
+    substantive thematic content. Both groups are reported transparently in the Results section
+    and excluded from the percentage-based gap analysis in Figure 5 of the manuscript.</p>
+
+    <p><strong>Important caveat:</strong> Keyword-based classification is a heuristic. It is
+    sensitive to the vocabulary used in the Trend field, which varies across entries and source
+    types. Short or vague trend labels may be misclassified or fall into Other even when the
+    underlying source clearly addresses a particular STEEP domain. Classification was not
+    subject to formal inter-rater reliability testing; this is acknowledged as a limitation
+    in Section 5c of the manuscript.</p>
+    </div>
+<h2 id="steep-framework">The STEEP framework</h2>
+<div class="prose-block">
+    <p>The STEEP framework (Social, Technological, Economic, Environmental, Political) is a
+    widely used classification scheme in futures studies and horizon scanning for organising
+    drivers of change by their primary domain of origin. It was first systematised in the
+    environmental scanning literature and has since been adopted by consultancies, government
+    agencies, and academic foresight researchers as a standard taxonomy for megatrend analysis
+    (Naisbitt, 1982; Hajkowicz, 2015).</p>
+
+    <p>The five categories as applied in this review:</p>
+    <div class="steep-card" style="border-left:4px solid;border-color:#d4edda;background:#d4edda;padding:10px 14px;margin:8px 0;border-radius:4px">The <strong>Environmental</strong> domain captures drivers related to the natural world: climate change, ecological systems, biodiversity loss, ocean chemistry, resource scarcity, and sustainability pressures. In the fisheries context this domain is particularly broad, encompassing not only macro-level environmental forces (e.g. ocean warming, acidification) but also sector-specific ecological dynamics such as overfishing, habitat destruction, by-catch, and shifts in species distribution. The keyword list for this category was deliberately expanded to capture fisheries-specific terminology (e.g. 'fishery', 'fisher', 'aquaculture', 'trophic') that might not appear in generic STEEP schemes designed for cross-sectoral use.</div><div class="steep-card" style="border-left:4px solid;border-color:#cce5ff;background:#cce5ff;padding:10px 14px;margin:8px 0;border-radius:4px">The <strong>Technological</strong> domain covers drivers related to the development and diffusion of new technologies: digitisation, automation, artificial intelligence, biotechnology, synthetic biology, hyperconnectivity, and innovation systems. In the cross-sectoral megatrend literature this is one of the most prominent categories, reflecting the pace of technological disruption across industries. The near-complete absence of this domain in the fisheries futures literature is the central finding of the gap analysis and a key motivation for this review.</div><div class="steep-card" style="border-left:4px solid;border-color:#fff3cd;background:#fff3cd;padding:10px 14px;margin:8px 0;border-radius:4px">The <strong>Economic</strong> domain encompasses drivers related to economic systems: globalisation, trade patterns, market structure, financial dynamics, labour markets, consumption trends, and economic power shifts between regions. For fisheries, economic drivers include seafood market volatility, the growing economic weight of aquaculture, restructuring of global seafood supply chains, and the economic value of recreational versus commercial fisheries. The domain was notably underrepresented in the fisheries futures literature relative to the cross-sectoral baseline.</div><div class="steep-card" style="border-left:4px solid;border-color:#f8d7da;background:#f8d7da;padding:10px 14px;margin:8px 0;border-radius:4px">The <strong>Social</strong> domain captures drivers rooted in human societies: demographic change, urbanisation, migration, ageing populations, shifting cultural values, health trends, inequality, education, and lifestyle change. In the fisheries context, social drivers include the future of small-scale and artisanal fishing communities, indigenous and customary fishing rights, food security in coastal and low-income populations, and changing consumer preferences for seafood. Social drivers were substantially underrepresented in the fisheries futures literature (+11 percentage points gap).</div><div class="steep-card" style="border-left:4px solid;border-color:#e2d9f3;background:#e2d9f3;padding:10px 14px;margin:8px 0;border-radius:4px">The <strong>Political</strong> domain covers drivers related to governance, regulation, geopolitics, and institutional frameworks: changing security paradigms, shifts in global power, trade policy, multilateral agreements, democratisation, and institutional reform. In fisheries, political drivers include fisheries management regimes, quota allocation, international fisheries agreements, IUU fishing governance, and geopolitical competition over access rights to fishing grounds. This was the smallest category in both databases.</div>
+
+    <p>The STEEP framework was chosen for this review because it is the dominant classification
+    scheme in the cross-sectoral foresight literature from which the megatrend database was
+    assembled. Applying the same framework to the fisheries futures literature enables a
+    direct, category-by-category comparison and gap analysis. Alternative frameworks
+    (e.g. PESTLE, DESTEP) were considered but add categories not consistently represented
+    in the source literature.</p>
+    </div>
+<h2 id="s41">Section 4.1 — Overview of search outcomes</h2>
+<div class="prose-block">
+    <p>This section reports the aggregate counts produced by the three search strategies.
+    The figures are used to characterise the overall scope of the evidence base and to
+    position this review within the PRISMA 2020 reporting framework (Page et al., 2021).
+    The key distinction to keep in mind when reading this section is between <em>included</em>
+    sources (those that passed all screening stages and contribute to the analysis) and
+    <em>pending</em> sources (those that passed title/abstract screening but await full-text
+    review). The claims below refer to included sources only, unless otherwise stated.</p>
+    </div>
 
     <div class="claim-block" id="claim-overview">
-      <div class="claim-text">&#8220;The three-step search strategy yielded a combined total of 210 sources.&#8221; <span class="badge">3 sources</span></div>
-      <div class="claim-note">Breakdown: 60 fisheries futures (manual) + 145 megatrends + 5 signal(s). 720 additional OpenAlex papers are pending full-text screening.</div>
-      <table class="evidence-table"><thead><tr><th>Search strategy</th><th>n</th><th>Status</th></tr></thead><tbody><tr style="background:#ffffff"><td>Strategy 1 — Fisheries futures (manual)</td><td>60</td><td>Included</td></tr><tr style="background:#ffffff"><td>Strategy 1 — Fisheries futures (OpenAlex pending)</td><td>720</td><td>Pending full-text</td></tr><tr style="background:#ffffff"><td>Strategy 2 — Cross-sectoral megatrends</td><td>145</td><td>Included</td></tr><tr style="background:#ffffff"><td>Strategy 3 — Weak signals</td><td>5</td><td>Initial scan</td></tr><tr style="background:#ffffff"><td>TOTAL (manual + grey lit)</td><td>210</td><td></td></tr></tbody></table>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;The three-step search strategy yielded a combined total of 210 sources across the peer-reviewed and grey literature databases.&#8221; <span class="badge">3 sources</span></div>
+      <div class="claim-rationale">This figure (210) is the sum of the three included source sets: 60 manually screened fisheries futures papers (Strategy 1), 145 cross-sectoral megatrend sources (Strategy 2), and 5 weak signal entries (Strategy 3). The 720 OpenAlex candidates that passed title/abstract screening are explicitly excluded from this total and from all quantitative analyses reported in Sections 4.2–4.4. Completion of full-text screening of the 720 candidates is a priority for the next phase of the review and may revise the figures reported below, particularly in the fisheries-specific STEEP distribution.</div>
+      <div class="claim-query"><strong>Data query:</strong> Count of rows in each active database sheet. The 720 pending OpenAlex papers are tracked in <code>search_output/screened_included.csv</code> and are not included in the sheets.</div>
+      <table class="evidence-table"><thead><tr><th>Search strategy</th><th>n</th><th>Status</th></tr></thead><tbody><tr style="background:#d4edda"><td>Strategy 1 — Fisheries futures (manual screening)</td><td>60</td><td>Included</td></tr><tr style="background:#e9ecef"><td>Strategy 1 — Fisheries futures (OpenAlex, pending full-text)</td><td>720</td><td>Pending</td></tr><tr style="background:#cce5ff"><td>Strategy 2 — Cross-sectoral megatrends (manual)</td><td>145</td><td>Included</td></tr><tr style="background:#fce4ec"><td>Strategy 3 — Weak signals (initial scan)</td><td>5</td><td>Included</td></tr><tr style="background:#e9ecef"><td>TOTAL included in analysis</td><td>210</td><td></td></tr></tbody></table>
     </div>
     
-<h2 id="s42">4.2 Drivers — Cross-sectoral megatrends</h2>
+
+    <div class="claim-block" id="claim-source-types">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Within the cross-sectoral megatrend database, academic articles constituted the largest share of sources (n = 79, 54%), followed by consultancy publications (n = 22, 15%) and government or institutional reports (n = 18, 12%).&#8221; <span class="badge">8 sources</span></div>
+      <div class="claim-rationale">The composition of the megatrend database by source type matters because different publication genres have different thematic emphases. Consultancy publications (PWC, KPMG, EY, Deloitte) tend to foreground technological and economic disruption, whilst government and intergovernmental sources give more weight to social and political dynamics. Academic articles span all categories. This genre effect is visible in Figure 4 of the manuscript and is documented in the claim below on consultancy emphasis on technological and economic drivers.</div>
+      <div class="claim-query"><strong>Data query:</strong> Value counts of the <code>source_type</code> column in the megatrend sheet, after standardisation of type labels.</div>
+      <table class="evidence-table"><thead><tr><th>Source type</th><th>n</th></tr></thead><tbody><tr style="background:#e9ecef"><td>Article</td><td>79</td></tr><tr style="background:#e9ecef"><td>Consultancy</td><td>22</td></tr><tr style="background:#e9ecef"><td>Government</td><td>18</td></tr><tr style="background:#e9ecef"><td>Business</td><td>7</td></tr><tr style="background:#e9ecef"><td>?</td><td>5</td></tr><tr style="background:#e9ecef"><td>Government? (finnish innovation fund)</td><td>5</td></tr><tr style="background:#e9ecef"><td>Book</td><td>5</td></tr><tr style="background:#e9ecef"><td>Oxfam discussion paper</td><td>4</td></tr></tbody></table>
+    </div>
+    
+<h2 id="s42">Section 4.2 — Drivers: Cross-sectoral megatrend database</h2>
+<div class="prose-block">
+    <p>The cross-sectoral megatrend database (Strategy 2, n = 145) draws on major global
+    foresight publications spanning business consultancies, governmental bodies, research
+    institutions, and academic journals. These sources were selected because they explicitly
+    address megatrends — large-scale, long-duration forces expected to reshape societies and
+    economies — and because they are frequently cited as reference frameworks within the
+    futures studies community.</p>
+
+    <p>The STEEP distribution reported below reflects how the field as a whole frames the
+    landscape of global change. It serves as the <em>benchmark</em> against which the
+    fisheries-specific futures literature is compared in the gap analysis (Section 4.2b).
+    Each claim below links to all database rows classified in that category, enabling you
+    to inspect which specific sources and trends contribute to each percentage figure.</p>
+
+    <p>Note that 8 entries (6%)
+    fell into the Other/Unclassified category and are not included in the per-category
+    percentage calculations. These entries typically describe cross-cutting themes that span
+    multiple STEEP domains simultaneously.</p>
+    </div>
 
     <div class="claim-block" id="claim-mg-environmental">
-      <div class="claim-text">&#8220;Environmental drivers: n = 41 (28% of all megatrend entries).&#8221; <span class="badge">41 sources</span></div>
-      <div class="claim-note">All 41 rows from the megatrend database classified as Environmental.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Environmental drivers: n = 41 (28% of all megatrend entries; 30% of classifiable entries).&#8221; <span class="badge">41 sources</span></div>
+      <div class="claim-rationale">The <strong>Environmental</strong> domain captures drivers related to the natural world: climate change, ecological systems, biodiversity loss, ocean chemistry, resource scarcity, and sustainability pressures. In the fisheries context this domain is particularly broad, encompassing not only macro-level environmental forces (e.g. ocean warming, acidification) but also sector-specific ecological dynamics such as overfishing, habitat destruction, by-catch, and shifts in species distribution. The keyword list for this category was deliberately expanded to capture fisheries-specific terminology (e.g. 'fishery', 'fisher', 'aquaculture', 'trophic') that might not appear in generic STEEP schemes designed for cross-sectoral use. In the megatrend database, this category contains 41 entries drawn from 8 distinct source types, spanning 2012–2023.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where the STEEP classification algorithm assigned category = 'Environmental', sorted by year.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>Food, Water, Energy Nexus</td><td>National Intelligence Council</td><td>2012.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Public debt</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Resource stress</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>scarcity of natural resources</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>biodiversity and the global climate</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change and resource scarcity</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Demographic shifts</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Rise of technology</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change </td><td>Vladislav Maraš, Mirjana Bugarinovic, Eleni Anoyrkati, Alba Avarello</td><td>2018.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Resource Scarcity </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>environmental pressure</td><td>Filippo Artuso, I. Guijt</td><td>2020.0</td><td>Oxfam discussion paper</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Renewable energy sources</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Social and environmental regulations</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Resource scarcity</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Skills Mismatch</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Catastrophic events/hazards</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Sustainable Employment </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Decarbonization </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Environmental Issues</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change and environmental degradation</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Continuing urbanisation</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Shifting health challenges</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Environmental Shifts and Pressures</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Adapting to a changing climate</td><td>(CISRO) Commonwealth Scientific and Industrial Research Organisation is an Australian Government agency</td><td>2022.0</td><td>Business</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Leaner, cleaner and greener</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Increasingly autonomous</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>progression toward a green economy</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change and sustainability</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Aggravating resource scarcity</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Sustainability</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Aging Population</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Global Health</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Mobility</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate Change</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Economic foundations are cracking.</td><td>SITRA STUDIES 225</td><td>2023.0</td><td>Government? (finnish innovation fund)</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Well-being challenges are growing</td><td>SITRA STUDIES 225</td><td>2023.0</td><td>Government? (finnish innovation fund)</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Nature’s carrying capacity is eroding</td><td>SITRA STUDIES 225</td><td>2023.0</td><td>Government? (finnish innovation fund)</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>environmental changes,</td><td>Radosław Malik, Anna Anetta Janowska</td><td></td><td>Article</td><td>Environmental</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-mg-technological">
-      <div class="claim-text">&#8220;Technological drivers: n = 41 (28% of all megatrend entries).&#8221; <span class="badge">41 sources</span></div>
-      <div class="claim-note">All 41 rows from the megatrend database classified as Technological.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Technological drivers: n = 41 (28% of all megatrend entries; 30% of classifiable entries).&#8221; <span class="badge">41 sources</span></div>
+      <div class="claim-rationale">The <strong>Technological</strong> domain covers drivers related to the development and diffusion of new technologies: digitisation, automation, artificial intelligence, biotechnology, synthetic biology, hyperconnectivity, and innovation systems. In the cross-sectoral megatrend literature this is one of the most prominent categories, reflecting the pace of technological disruption across industries. The near-complete absence of this domain in the fisheries futures literature is the central finding of the gap analysis and a key motivation for this review. In the megatrend database, this category contains 41 entries drawn from 8 distinct source types, spanning 2012–2023.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where the STEEP classification algorithm assigned category = 'Technological', sorted by year.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#cce5ff"><td>Individual Empowerment</td><td>National Intelligence Council</td><td>2012.0</td><td>Government</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Rise of the individual</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Enabling technology</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>digital technologies</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>technology dynamic and innovation</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>global knowledge societey</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Increasing Inequality </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Electrification of transport</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>rapid technology development </td><td>Filippo Artuso, I. Guijt</td><td>2020.0</td><td>Oxfam discussion paper</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Digital economy</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Financial Innovation</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Digital natives</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Knowledge based economy</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Digital transformation</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Technology development and automatization</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Continued Globalization</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Changing Workforce Composition</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Intellectual property law</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Speed of Technological Advancement</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Techonomic cold war </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Behavioral economy </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Synthetic media </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Future of thinking </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Microbiomes </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Synthetic biology </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Flexible Employment</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Diversification of education and learning</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Technological Advances</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Digitalization in healthcare. </td><td>M. Deml, K. Jungo, M. Maessen, A. Martani, A. Ulytė</td><td>2022.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Geopolitical shifts</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>digitalization</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Unlocking the human dimension</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Diving into digital</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Accelerating technological change and hyperconnectivity</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Emerging Markets</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Automation</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Globalization</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Urbanization</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Digitalization</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>The competition for digital power gears up</td><td>SITRA STUDIES 225</td><td>2023.0</td><td>Government? (finnish innovation fund)</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>technology developments</td><td>Radosław Malik, Anna Anetta Janowska</td><td></td><td>Article</td><td>Technological</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-mg-economic">
-      <div class="claim-text">&#8220;Economic drivers: n = 33 (23% of all megatrend entries).&#8221; <span class="badge">33 sources</span></div>
-      <div class="claim-note">All 33 rows from the megatrend database classified as Economic.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Economic drivers: n = 33 (23% of all megatrend entries; 24% of classifiable entries).&#8221; <span class="badge">33 sources</span></div>
+      <div class="claim-rationale">The <strong>Economic</strong> domain encompasses drivers related to economic systems: globalisation, trade patterns, market structure, financial dynamics, labour markets, consumption trends, and economic power shifts between regions. For fisheries, economic drivers include seafood market volatility, the growing economic weight of aquaculture, restructuring of global seafood supply chains, and the economic value of recreational versus commercial fisheries. The domain was notably underrepresented in the fisheries futures literature relative to the cross-sectoral baseline. In the megatrend database, this category contains 33 entries drawn from 7 distinct source types, spanning 2012–2022.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where the STEEP classification algorithm assigned category = 'Economic', sorted by year.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#fff3cd"><td>Demographic Patterns</td><td>National Intelligence Council</td><td>2012.0</td><td>Government</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Demographics</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic interconnectedness</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic power shift</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Urbanization</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>economic growth and urbanisation </td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Shift in global economic power</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>globalization and markets of the future</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>energydemand /sources</td><td>Vladislav Maraš, Mirjana Bugarinovic, Eleni Anoyrkati, Alba Avarello</td><td>2018.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Urbanization </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>population growth.</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Global trade shift</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Supranationalism</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Protectionism</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>shifting power</td><td>Filippo Artuso, I. Guijt</td><td>2020.0</td><td>Oxfam discussion paper</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic Powershifts </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>change in consumption pattern</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>aging populatiodemogrphic change</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Individualism</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Cross-Border Migration </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>globalization</td><td>O. Koppel, O. Parkhomchuk</td><td>2021.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>sustainable finance</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>The escalating health imperative</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Changing Values</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Socio-demographic shifts </td><td>M. Deml, K. Jungo, M. Maessen, A. Martani, A. Ulytė</td><td>2022.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Broadening meaning of “health. </td><td>M. Deml, K. Jungo, M. Maessen, A. Martani, A. Ulytė</td><td>2022.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Population Change</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Shifting Economic Power</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Increasing demographic imbalances</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Growing consumption</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Expanding influence of East and South</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Changing nature of work</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>growth of urbanisation,</td><td>Radosław Malik, Anna Anetta Janowska</td><td></td><td>Article</td><td>Economic</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-mg-social">
-      <div class="claim-text">&#8220;Social drivers: n = 18 (12% of all megatrend entries).&#8221; <span class="badge">18 sources</span></div>
-      <div class="claim-note">All 18 rows from the megatrend database classified as Social.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Social drivers: n = 18 (12% of all megatrend entries; 13% of classifiable entries).&#8221; <span class="badge">18 sources</span></div>
+      <div class="claim-rationale">The <strong>Social</strong> domain captures drivers rooted in human societies: demographic change, urbanisation, migration, ageing populations, shifting cultural values, health trends, inequality, education, and lifestyle change. In the fisheries context, social drivers include the future of small-scale and artisanal fishing communities, indigenous and customary fishing rights, food security in coastal and low-income populations, and changing consumer preferences for seafood. Social drivers were substantially underrepresented in the fisheries futures literature (+11 percentage points gap). In the megatrend database, this category contains 18 entries drawn from 6 distinct source types, spanning 2015–2023.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where the STEEP classification algorithm assigned category = 'Social', sorted by year.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#f8d7da"><td>ageing population</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>consumer expectations</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Accelerating urbanization</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Social</td></tr><tr style="background:#f8d7da"><td>demographic shift</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>urbanization and megacities </td><td>Vladislav Maraš, Mirjana Bugarinovic, Eleni Anoyrkati, Alba Avarello</td><td>2018.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>changing lifestyles </td><td>Vladislav Maraš, Mirjana Bugarinovic, Eleni Anoyrkati, Alba Avarello</td><td>2018.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>urbanization</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Political stability</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>demography</td><td>Filippo Artuso, I. Guijt</td><td>2020.0</td><td>Oxfam discussion paper</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Consumer protection laws</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>individualism</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td> urbanization and smart cities</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Empowered patients and service users</td><td>M. Deml, K. Jungo, M. Maessen, A. Martani, A. Ulytė</td><td>2022.0</td><td>Article</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Increasing significance of migration</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Increasing influence of new governing systems</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Social</td></tr><tr style="background:#f8d7da"><td>Widening inequalities</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Social</td></tr><tr style="background:#f8d7da"><td>The battle for democracy intensifies</td><td>SITRA STUDIES 225</td><td>2023.0</td><td>Government? (finnish innovation fund)</td><td>Social</td></tr><tr style="background:#f8d7da"><td>demographic shifts,</td><td>Radosław Malik, Anna Anetta Janowska</td><td></td><td>Article</td><td>Social</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-mg-political">
-      <div class="claim-text">&#8220;Political drivers: n = 4 (3% of all megatrend entries).&#8221; <span class="badge">4 sources</span></div>
-      <div class="claim-note">All 4 rows from the megatrend database classified as Political.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Political drivers: n = 4 (3% of all megatrend entries; 3% of classifiable entries).&#8221; <span class="badge">4 sources</span></div>
+      <div class="claim-rationale">The <strong>Political</strong> domain covers drivers related to governance, regulation, geopolitics, and institutional frameworks: changing security paradigms, shifts in global power, trade policy, multilateral agreements, democratisation, and institutional reform. In fisheries, political drivers include fisheries management regimes, quota allocation, international fisheries agreements, IUU fishing governance, and geopolitical competition over access rights to fishing grounds. This was the smallest category in both databases. In the megatrend database, this category contains 4 entries drawn from 2 distinct source types, spanning 2012–2022.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where the STEEP classification algorithm assigned category = 'Political', sorted by year.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#e2d9f3"><td>Diffusion of Power</td><td>National Intelligence Council</td><td>2012.0</td><td>Government</td><td>Political</td></tr><tr style="background:#e2d9f3"><td>democratization </td><td>O. Koppel, O. Parkhomchuk</td><td>2021.0</td><td>Article</td><td>Political</td></tr><tr style="background:#e2d9f3"><td>Changing security paradigm</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Political</td></tr><tr style="background:#e2d9f3"><td>changes in geopolitics.</td><td>Radosław Malik, Anna Anetta Janowska</td><td></td><td>Article</td><td>Political</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-climate">
-      <div class="claim-text">&#8220;Climate change emerged as the most frequently identified driver, cited independently by five distinct sources.&#8221; <span class="badge">10 sources</span></div>
-      <div class="claim-note">Rows where the trend field explicitly contains 'climate'.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Climate change emerged as the most frequently identified driver across all source types, cited independently by five distinct sources.&#8221; <span class="badge">10 sources</span></div>
+      <div class="claim-rationale">Climate change is the only driver to appear as an explicitly named megatrend in five separate source documents, making it the single most convergent finding across the entire megatrend database. This convergence is notable because it holds across source types — academic, governmental, and consultancy sources all independently identify climate change as a primary driver — and across geographic and institutional contexts. In the fisheries-specific literature, climate change is similarly dominant, suggesting that this driver is unusually well-integrated between the two bodies of evidence.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows in the megatrend sheet where the <code>trend</code> field (lowercase) contains the substring 'climate'.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>Climate change and environmental degradation</td><td>Competence Centre on Foresight.</td><td>2022.0</td><td>Government</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change and resource scarcity</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Adapting to a changing climate</td><td>(CISRO) Commonwealth Scientific and Industrial Research Organisation is an Australian Government agency</td><td>2022.0</td><td>Business</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate Change</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change and sustainability</td><td>Berthold M. Kuhn and Dimitrios L. Margellos</td><td>2022.0</td><td>Book</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change </td><td>Vladislav Maraš, Mirjana Bugarinovic, Eleni Anoyrkati, Alba Avarello</td><td>2018.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>biodiversity and the global climate</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>climate change</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Environmental</td></tr></tbody></table>
     </div>
     
 
     <div class="claim-block" id="claim-consult-tech">
+      <div class="claim-label">Claim</div>
       <div class="claim-text">&#8220;Consultancy and business publications placed comparatively greater emphasis on technological and economic drivers.&#8221; <span class="badge">17 sources</span></div>
-      <div class="claim-note">Megatrend entries from Consultancy or Business sources classified as Technological or Economic.</div>
+      <div class="claim-rationale">Of the 29 entries from consultancy and business sources, 17 (59%) were classified as either Technological or Economic. This compares to a combined Technological + Economic share of 51% across the full database. The genre effect is consistent with the known framing of major consultancy megatrend reports (e.g. PwC, KPMG, EY, Deloitte), which tend to orient their foresight analyses around business disruption, market opportunity, and the competitive implications of emerging technologies — rather than the ecological or social dimensions that dominate government and academic sources.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the megatrend sheet where <code>source_type</code> contains 'consult' or 'business' (case-insensitive) AND STEEP category is Technological or Economic.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#fff3cd"><td>Demographics</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>Rise of the individual</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Enabling technology</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#fff3cd"><td>Economic interconnectedness</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic power shift</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Urbanization</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>Techonomic cold war </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Behavioral economy </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Synthetic media </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Future of thinking </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Microbiomes </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Synthetic biology </td><td>EY</td><td>2020.0</td><td>Consultancy</td><td>Technological</td></tr><tr style="background:#fff3cd"><td>Shift in global economic power</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>The escalating health imperative</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>Geopolitical shifts</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Diving into digital</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr><tr style="background:#cce5ff"><td>Unlocking the human dimension</td><td>(CISRO)</td><td>2022.0</td><td>Business</td><td>Technological</td></tr></tbody></table>
     </div>
     
-<h2 id="s42b">4.2 Drivers — Fisheries futures literature</h2>
+<h2 id="s42b">Section 4.2 — Drivers: Fisheries futures literature</h2>
+<div class="prose-block">
+    <p>The fisheries futures database (Strategy 1, n = 60 manually screened papers) contains
+    peer-reviewed academic literature explicitly addressing future scenarios, impact analyses,
+    or trend evaluations in fisheries research. Entries were identified through a structured
+    database search (OpenAlex, Elicit, Semantic Scholar) and manually screened for relevance.</p>
 
-    <div class="claim-block" id="claim-ff-env">
-      <div class="claim-text">&#8220;The environmental domain was strongly dominant, accounting for 58% of classified entries (n = 35).&#8221; <span class="badge">35 sources</span></div>
-      <div class="claim-note">All 35 fisheries futures entries classified as Environmental.</div>
+    <p>Of the 60 entries, 45 (75%) were
+    successfully assigned to one of the five STEEP categories. The remaining 15
+    (25%) were classified as Other/Unclassified.
+    The STEEP distribution among the 45 classifiable entries is the basis
+    for the gap analysis in Figure 5 of the manuscript.</p>
+
+    <p>The claims below document each category in the fisheries futures database and provide
+    the full list of supporting rows. The most significant finding — the complete absence of
+    technological entries — is documented with an explicit zero-count confirmation.</p>
+    </div>
+
+    <div class="claim-block" id="claim-ff-environmental">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Fisheries futures — Environmental domain: n = 35 (58% of all entries; 78% of classifiable entries).&#8221; <span class="badge">35 sources</span></div>
+      <div class="claim-rationale">Of the 60 fisheries futures entries, 35 (58% of all entries; 78% of classifiable entries) were assigned to the Environmental category. The strong dominance of the Environmental category reflects the field's historical focus on ecological dynamics — climate impacts on fish stocks, overfishing, habitat loss, by-catch, and food web disruption. When the Other/Unclassified entries are excluded, Environmental accounts for 78% of classifiable fisheries futures content, compared to 30% in the megatrend database. This is not a gap but a disciplinary orientation that the field has developed over decades.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Environmental'.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>?</td><td>STATE OF GLOBAL FISHERIES – MANAGEMENT POLICIES </td><td>Alicja Dabrowska, Lara D. Mateos </td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td>?</td><td>The Future for Fisheries</td><td>Daniel Pauly1 * Jackie Alder,1 Elena Bennett,2 Villy Christensen,1 Peter Tyedmers,3 Reg Watson1</td><td>2003.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>risk of climate change on coupled marine human and natural systems </td><td>The future of fishes and fisheries in the changing oceans.</td><td>W. Cheung</td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td>overfishing of fish stock</td><td>Fishing for the future: An overview of challenges and opportunities</td><td>U. Rashid Sumaila, Christophe Bellmann, Alice Tipping</td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>estruction of fish habitat</td><td>Fishing for the future: An overview of challenges and opportunities</td><td>U. Rashid Sumaila, Christophe Bellmann, Alice Tipping</td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>fishing down of marine food webs</td><td>Fishing for the future: An overview of challenges and opportunities</td><td>U. Rashid Sumaila, Christophe Bellmann, Alice Tipping</td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>ecological disruption</td><td>Fishing for the future: An overview of challenges and opportunities</td><td>U. Rashid Sumaila, Christophe Bellmann, Alice Tipping</td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>by-catch problems</td><td>Fishing for the future: An overview of challenges and opportunities</td><td>U. Rashid Sumaila, Christophe Bellmann, Alice Tipping</td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Demography, globalization and economic development</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Governance</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishing capacity and technological progress</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fisheries Production/ capture</td><td></td><td></td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fisheries Production/ capture</td><td></td><td></td><td>2005.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishery Conflict</td><td></td><td></td><td>2021.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishery Conflict</td><td></td><td></td><td>2018.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>BOOK on the Future fo Fisheries</td><td></td><td></td><td>1998.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>recreational fisheries</td><td></td><td></td><td>2022.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>diversification in fishery products</td><td></td><td></td><td>1996.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>brief vision statement on transdisciplinarity science for fishery </td><td></td><td></td><td>2021.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>fisheries-conservation hotspots *biology(</td><td></td><td></td><td>2012.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>overview of different lenses for  better fishery management</td><td></td><td></td><td>2005.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>economic benefit of fisheries and connected challenges</td><td></td><td></td><td>2005.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Interesting article in Fish and Fisheries on scenarios</td><td></td><td></td><td>2020.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td> economic benefits of restoring overexploited ecosystems</td><td></td><td></td><td>2021.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Food security / small scale fisheries / changing fisheries supply</td><td></td><td></td><td>2020.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>trends in fishery sciences</td><td></td><td></td><td>2022.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Lit.review with timeline of changing research topics</td><td></td><td></td><td>2023.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>impact of climate change on fisheries</td><td></td><td></td><td>2016.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>trend analysis on the status of marine ecosystems</td><td></td><td></td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishers of the future</td><td></td><td></td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Factors and trends influencing the long-term sustainability and profitability of the fishing sector and fishing communities’ well-being: this includes the impacts of climate change, biodiversity loss and pollution; the green and digital transition; the need for skill development; an aging workforce; market dynamics; and trade developments.</td><td></td><td></td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Environmental variables</td><td></td><td>stock migration and redistribution</td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td></td><td></td><td>declining stock status (abundance and health of stock)</td><td></td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Jarić, I., Cvijanović, G., Knežević-Jarić, J., &amp; Lenhardt, M. (2012). Trends in Fisheries Science from 2000 to 2009: A Bibliometric Study. Reviews in Fisheries Science, 20(2), 70–79. https://doi.org/10.1080/10641262.2012.659775</td><td></td><td></td><td></td><td>Environmental</td></tr></tbody></table>
     </div>
     
 
+    <div class="claim-block" id="claim-ff-technological">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Fisheries futures — Technological domain: n = 0 (0% of all entries; 0% of classifiable entries).&#8221; <span class="badge">0 sources</span></div>
+      <div class="claim-rationale">This is the most significant finding in the entire review. Despite technological change (automation, digitalisation, AI, biotechnology, synthetic biology) accounting for 28% of the cross-sectoral megatrend database, not a single one of the 60 manually screened fisheries futures papers was classified under the Technological domain. This is not a data artefact: the classification algorithm searched all available text fields (trend label, details, title) for any of the Technological keywords. The finding implies that futures-oriented fisheries research has, as of the search date, not yet engaged systematically with how technological forces will reshape the sector. This represents the primary actionable gap identified by the review.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Technological'.</div>
+      <p class='zero-result'>&#10003; Confirmed zero entries. The complete absence of technological drivers in the fisheries futures literature is the central empirical finding of this review. It is not an artefact of the keyword list — the full keyword set for the Technological category was applied to all 60 entries and matched none. This absence holds for both manual trend labels and paper titles.</p>
+    </div>
+    
+
+    <div class="claim-block" id="claim-ff-economic">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Fisheries futures — Economic domain: n = 6 (10% of all entries; 13% of classifiable entries).&#8221; <span class="badge">6 sources</span></div>
+      <div class="claim-rationale">Of the 60 fisheries futures entries, 6 (10% of all entries; 13% of classifiable entries) were assigned to the Economic category. Economic futures in fisheries research remain comparatively underdeveloped. The entries that do address economic dimensions tend to focus on narrow issues — the economic benefit of ecosystem restoration, or the role of economic incentives in coastal management — rather than on broader economic foresight questions such as seafood market restructuring, value chain globalisation, or the macroeconomic implications of climate-driven stock shifts.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Economic'.</div>
+      <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#fff3cd"><td>Consumer Demand</td><td></td><td></td><td>1981.0</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Consumer Demand</td><td></td><td></td><td>1998.0</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>economic incentives, coastal planning</td><td></td><td></td><td>2016.0</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic variables</td><td></td><td>fishing effort (number of boats and cumulative power of their engine) d unequal levels of</td><td></td><td>Economic</td></tr><tr style="background:#fff3cd"><td></td><td></td><td>unequal levels of technology available</td><td></td><td>Economic</td></tr><tr style="background:#fff3cd"><td></td><td></td><td>ethnic tensions</td><td></td><td>Economic</td></tr></tbody></table>
+    </div>
+    
+
+    <div class="claim-block" id="claim-ff-social">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Fisheries futures — Social domain: n = 1 (2% of all entries; 2% of classifiable entries).&#8221; <span class="badge">1 source</span></div>
+      <div class="claim-rationale">Of the 60 fisheries futures entries, 1 (2% of all entries; 2% of classifiable entries) were assigned to the Social category. Social futures are the most underrepresented category in the fisheries futures literature in absolute terms (n = 1). The single entry addresses food security and small-scale fisheries, which is a well-established concern in the fisheries development literature but does not engage with broader social megatrends (demographic change, urbanisation, migration, changing consumer values) that are prominent in the cross-sectoral database.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Social'.</div>
+      <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#f8d7da"><td>Social variables</td><td></td><td>unequal distribution of benefits (real or perceived)</td><td></td><td>Social</td></tr></tbody></table>
+    </div>
+    
+
+    <div class="claim-block" id="claim-ff-political">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Fisheries futures — Political domain: n = 3 (5% of all entries; 7% of classifiable entries).&#8221; <span class="badge">3 sources</span></div>
+      <div class="claim-rationale">Of the 60 fisheries futures entries, 3 (5% of all entries; 7% of classifiable entries) were assigned to the Political category. Political and governance futures in fisheries appear primarily as subsidiary topics within ecological or economic analyses, rather than as primary objects of foresight inquiry. Entries in this category address fisheries governance, management regimes, and fishery conflict rather than the broader geopolitical megatrends (shifting power, changing security paradigms, protectionism) that dominate the cross-sectoral political domain.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Political'.</div>
+      <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#e2d9f3"><td>future scenarios for management (In Japan)</td><td></td><td></td><td>2011.0</td><td>Political</td></tr><tr style="background:#e2d9f3"><td>Political variables</td><td></td><td>poor rule enforcement and patrolling</td><td></td><td>Political</td></tr><tr style="background:#e2d9f3"><td></td><td></td><td>absence of comprehensive and inclusive management practices</td><td></td><td>Political</td></tr></tbody></table>
+    </div>
+    
+
     <div class="claim-block" id="claim-ff-other">
-      <div class="claim-text">&#8220;A further 32% of entries (n = 15) could not be assigned to any single STEEP domain.&#8221; <span class="badge">15 sources</span></div>
-      <div class="claim-note">Entries classified as 'Other': either insufficient metadata or methodological descriptors.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;A further 32% of entries (n = 15) could not be assigned to any single STEEP domain and are retained as unclassified.&#8221; <span class="badge">15 sources</span></div>
+      <div class="claim-rationale">These 19 entries fall into two analytically distinct groups. The first group (approximately 10 entries) consists of rows with no usable content in any text field: the Trend, Details, and Title columns are all empty or contain only placeholder values. These represent incomplete database entries — papers that were identified and included in the database but whose trend content has not yet been recorded. The second group (approximately 9 entries) consists of entries whose Trend field describes a methodological approach rather than a substantive thematic content: entries labelled 'Scenario', 'Trend and drivers', 'Participatory MES scenario', or 'Overview of different drivers'. These entries describe the type of analysis the paper performs, not the domain it addresses, and therefore cannot be meaningfully classified under STEEP. Both groups are excluded from the gap analysis percentages in Figure 5.</div>
+      <div class="claim-query"><strong>Data query:</strong> Rows from the fisheries futures sheet where STEEP classification = 'Other'. Includes both metadata-incomplete entries and methodological-descriptor entries.</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#e9ecef"><td>Scenario</td><td></td><td></td><td>2003.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>status quo scenario</td><td></td><td></td><td>2019.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Manifesto</td><td></td><td></td><td>2011.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>N=A</td><td></td><td></td><td>2016.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Trend and drivers</td><td></td><td></td><td>2019.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Trend and drivers</td><td></td><td></td><td>2005.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Trends and drivers (Socio/ecological)</td><td></td><td></td><td>1998.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Bell prediction from 1970 for fish demad in 2000</td><td></td><td></td><td>1970.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>participatory MES scenario</td><td></td><td></td><td>2019.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>Overview of diffetent DRIVERS</td><td></td><td></td><td>2019.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td></td><td></td><td></td><td></td><td>Other</td></tr><tr style="background:#e9ecef"><td>Topic</td><td></td><td>Immediate conditions</td><td></td><td>Other</td></tr><tr style="background:#e9ecef"><td></td><td></td><td>change in international, national, and local regulations and rules (in relation to access to fishery space, exclusive economic zones, fishery resources, or participation rights)</td><td></td><td>Other</td></tr><tr style="background:#e9ecef"><td></td><td></td><td>territorial issues (e.g., maritime boundary delimitations and disputed islands)</td><td></td><td>Other</td></tr><tr style="background:#e9ecef"><td></td><td></td><td>insufficient ecosystem knowledge</td><td></td><td>Other</td></tr></tbody></table>
     </div>
     
+<h2 id="gap">Gap analysis</h2>
+<div class="prose-block">
+    <p>The gap analysis compares the STEEP distribution of the cross-sectoral megatrend
+    database (n = 145) with that of the fisheries futures literature (n = 60). The comparison
+    is expressed as the percentage-point difference between the share of entries in each STEEP
+    category across the two databases. A positive gap means that the category is proportionally
+    <em>more prominent</em> in the megatrend database than in the fisheries literature — i.e.
+    that fisheries research is paying less attention to that domain relative to the wider
+    foresight field. A negative gap means that fisheries research is proportionally
+    <em>more focused</em> on that domain than the megatrend literature.</p>
 
-    <div class="claim-block" id="claim-ff-tech">
-      <div class="claim-text">&#8220;No fisheries-specific entry was assigned to the technological domain (0%).&#8221; <span class="badge">0 sources</span></div>
-      <div class="claim-note">Confirmed: 0 rows match 'Technological' in the fisheries futures database.</div>
-      <p class='zero-result'>✓ Zero entries — the absence itself is the finding.</p>
+    <p><strong>Important caveat:</strong> The two databases differ not only in disciplinary
+    focus but in source type composition. The megatrend database contains a substantial share
+    of consultancy and grey literature sources, which tend to emphasise technological and
+    economic disruption. The fisheries database is exclusively peer-reviewed academic literature.
+    Some of the observed gap may therefore reflect genre conventions rather than a genuine
+    disciplinary blind spot. This is acknowledged in Section 5a of the manuscript.</p>
     </div>
-    
 
     <div class="claim-block" id="claim-gap">
+      <div class="claim-label">Claim</div>
       <div class="claim-text">&#8220;Technology gap = +28 percentage points — the largest disciplinary gap identified in the review.&#8221; <span class="badge">5 sources</span></div>
-      <div class="claim-note">Full gap analysis: megatrend STEEP % minus fisheries futures STEEP %.</div>
-      <table class="evidence-table"><thead><tr><th>STEEP Category</th><th>Megatrends (%)</th><th>Fisheries (%)</th><th>Gap (pp)</th></tr></thead><tbody><tr style="background:#d4edda"><td>Environmental</td><td>28%</td><td>58%</td><td>-30</td></tr><tr style="background:#cce5ff"><td>Technological</td><td>28%</td><td>0%</td><td>+28</td></tr><tr style="background:#fff3cd"><td>Economic</td><td>23%</td><td>10%</td><td>+13</td></tr><tr style="background:#f8d7da"><td>Social</td><td>12%</td><td>2%</td><td>+11</td></tr><tr style="background:#e2d9f3"><td>Political</td><td>3%</td><td>5%</td><td>-2</td></tr></tbody></table>
+      <div class="claim-rationale">The +28pp technology gap means that the Technological domain accounts for 28% of megatrend entries but 0% of fisheries futures entries — a difference of 28 percentage points. This is the largest gap in either direction across all five STEEP categories. The second-largest gap is Economic (+15pp), followed by Social (+11pp). Environmental shows a negative gap (fisheries over-represents this domain by ~25pp relative to the megatrend baseline). The Technology gap is robust: it holds regardless of whether percentages are calculated including or excluding the Other/Unclassified entries from both databases. Even if all 19 unclassified fisheries entries were reclassified as Technological, the fisheries technology share would reach only 32% — comparable to but not exceeding the megatrend baseline.</div>
+      <div class="claim-query"><strong>Data query:</strong> Percentage-point difference between megatrend STEEP% and fisheries STEEP%, calculated over all entries in each database (including Other in denominator).</div>
+      <table class="evidence-table"><thead><tr><th>STEEP Category</th><th>Megatrends (%)</th><th>Fisheries (%)</th><th>Gap (pp)</th><th>Direction</th></tr></thead><tbody><tr style="background:#d4edda"><td>Environmental</td><td>28%</td><td>58%</td><td>-30</td><td>Fisheries OVER-represents</td></tr><tr style="background:#cce5ff"><td>Technological</td><td>28%</td><td>0%</td><td>+28</td><td>Fisheries UNDER-represents</td></tr><tr style="background:#fff3cd"><td>Economic</td><td>23%</td><td>10%</td><td>+13</td><td>Fisheries UNDER-represents</td></tr><tr style="background:#f8d7da"><td>Social</td><td>12%</td><td>2%</td><td>+11</td><td>Fisheries UNDER-represents</td></tr><tr style="background:#e2d9f3"><td>Political</td><td>3%</td><td>5%</td><td>-2</td><td>Fisheries OVER-represents</td></tr></tbody></table>
     </div>
     
-<h2 id="s43">4.3 Trends</h2>
+<h2 id="s43">Section 4.3 — Trends</h2>
+<div class="prose-block">
+    <p>This section documents the specific recurrent themes identified within the fisheries
+    futures literature. Unlike the STEEP distribution analysis, which classifies entries by
+    their primary domain, the trends analysis identifies thematic clusters — groups of entries
+    that address the same substantive topic — by searching for recurring keywords across the
+    Trend, Details, and Title fields.</p>
 
-    <div class="claim-block" id="claim-conflict">
-      <div class="claim-text">&#8220;Recurrent theme: Fishery conflict.&#8221; <span class="badge">2 sources</span></div>
-      <div class="claim-note">Fisheries futures entries mentioning 'conflict'.</div>
+    <p>The themes documented below were identified as recurrent in the Results section of the
+    manuscript. Each claim links to the specific database entries that mention that theme,
+    providing the source evidence for the claim that these are established topics in the
+    fisheries futures literature. Note that a single paper may address multiple themes and
+    therefore appear in more than one table below.</p>
+    </div>
+
+    <div class="claim-block" id="claim-theme-conflict">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Recurrent theme in fisheries futures literature: Fishery conflict over access and resource rights.&#8221; <span class="badge">2 sources</span></div>
+      <div class="claim-rationale">Competition over fisheries access rights is a recurring governance concern in the futures literature. Fishery conflict entries address disputes between commercial and artisanal fishers, between fishing nations, and between fisheries and other marine users (e.g. offshore energy, shipping). As climate change shifts stock distributions, conflict over access rights is likely to intensify, making this a futures-relevant theme.</div>
+      <div class="claim-query"><strong>Data query:</strong> Fisheries futures entries where any of the Trend, Details, or Title fields contains 'conflict' (case-insensitive).</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>Fishery Conflict</td><td></td><td></td><td>2021.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishery Conflict</td><td></td><td></td><td>2018.0</td><td>Environmental</td></tr></tbody></table>
     </div>
     
 
-    <div class="claim-block" id="claim-demand">
-      <div class="claim-text">&#8220;Recurrent theme: Consumer demand.&#8221; <span class="badge">3 sources</span></div>
-      <div class="claim-note">Fisheries futures entries mentioning 'demand'.</div>
+    <div class="claim-block" id="claim-theme-demand">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Recurrent theme in fisheries futures literature: Consumer demand for seafood.&#8221; <span class="badge">3 sources</span></div>
+      <div class="claim-rationale">Increasing global demand for seafood — driven by population growth, income growth, and health-conscious dietary trends — is consistently identified as a major trend shaping future fisheries production. This theme bridges the Environmental (production capacity) and Economic (market demand) domains and appears in both the fisheries futures and megatrend databases.</div>
+      <div class="claim-query"><strong>Data query:</strong> Fisheries futures entries where any of the Trend, Details, or Title fields contains 'demand' (case-insensitive).</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>Demography, globalization and economic development</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#fff3cd"><td>Consumer Demand</td><td></td><td></td><td>1981.0</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Consumer Demand</td><td></td><td></td><td>1998.0</td><td>Economic</td></tr></tbody></table>
     </div>
     
 
-    <div class="claim-block" id="claim-recreational">
-      <div class="claim-text">&#8220;Recurrent theme: Recreational fisheries.&#8221; <span class="badge">1 source</span></div>
-      <div class="claim-note">Fisheries futures entries mentioning 'recreational'.</div>
+    <div class="claim-block" id="claim-theme-recreational">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Recurrent theme in fisheries futures literature: Growth of recreational fisheries.&#8221; <span class="badge">1 source</span></div>
+      <div class="claim-rationale">Recreational fishing is increasingly recognised as a sector of significant economic and social value that competes with commercial fisheries for stock access and management attention. Several futures studies identify the growth of recreational fisheries as a structural trend requiring explicit governance consideration, particularly in high-income countries where participation rates are rising.</div>
+      <div class="claim-query"><strong>Data query:</strong> Fisheries futures entries where any of the Trend, Details, or Title fields contains 'recreational' (case-insensitive).</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>recreational fisheries</td><td></td><td></td><td>2022.0</td><td>Environmental</td></tr></tbody></table>
     </div>
     
 
-    <div class="claim-block" id="claim-scenario">
-      <div class="claim-text">&#8220;Recurrent theme: Scenario-based studies.&#8221; <span class="badge">5 sources</span></div>
-      <div class="claim-note">Fisheries futures entries mentioning 'scenario'.</div>
+    <div class="claim-block" id="claim-theme-scenario">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Recurrent theme in fisheries futures literature: Scenario-based and futures methods in fisheries research.&#8221; <span class="badge">5 sources</span></div>
+      <div class="claim-rationale">A substantial subset of the fisheries futures literature is methodologically focused: papers that develop or apply scenario analysis, foresight frameworks, or participatory futures methods to fisheries questions. These entries describe the analytical approach of the paper rather than a substantive driver or trend, which is why they tend to fall into the Other/Unclassified STEEP category. They are documented here to characterise the methodological landscape of the field.</div>
+      <div class="claim-query"><strong>Data query:</strong> Fisheries futures entries where any of the Trend, Details, or Title fields contains 'scenario' (case-insensitive).</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#e9ecef"><td>Scenario</td><td></td><td></td><td>2003.0</td><td>Other</td></tr><tr style="background:#e9ecef"><td>status quo scenario</td><td></td><td></td><td>2019.0</td><td>Other</td></tr><tr style="background:#e2d9f3"><td>future scenarios for management (In Japan)</td><td></td><td></td><td>2011.0</td><td>Political</td></tr><tr style="background:#d4edda"><td>Interesting article in Fish and Fisheries on scenarios</td><td></td><td></td><td>2020.0</td><td>Environmental</td></tr><tr style="background:#e9ecef"><td>participatory MES scenario</td><td></td><td></td><td>2019.0</td><td>Other</td></tr></tbody></table>
     </div>
     
 
+    <div class="claim-block" id="claim-theme-food-security">
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Recurrent theme in fisheries futures literature: Food security and fisheries futures.&#8221; <span class="badge">5 sources</span></div>
+      <div class="claim-rationale">The relationship between fisheries and food security — particularly for coastal and low-income populations in the Global South — is a well-established theme in fisheries development literature. In the futures context, this theme addresses how declining catches, climate-driven stock shifts, and price volatility will affect the availability and affordability of fish as a protein source.</div>
+      <div class="claim-query"><strong>Data query:</strong> Fisheries futures entries where any of the Trend, Details, or Title fields contains 'food security' (case-insensitive).</div>
+      <table class="evidence-table"><thead><tr><th>trend</th><th>title</th><th>author</th><th>year</th><th>steep</th></tr></thead><tbody><tr style="background:#d4edda"><td>Demography, globalization and economic development</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Governance</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Fishing capacity and technological progress</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Climate change</td><td>Food security and marine capture fisheries: characteristics, trends, drivers and future perspectives</td><td>Garcia, S.M., Rosenberg, A.A. (2010). Food security and marine capture fisheries: char- acteristics, trends, drivers and future perspectives. Philosophical Transactions of the Roy- al Society, 365, 2869-80. </td><td>2010.0</td><td>Environmental</td></tr><tr style="background:#d4edda"><td>Food security / small scale fisheries / changing fisheries supply</td><td></td><td></td><td>2020.0</td><td>Environmental</td></tr></tbody></table>
+    </div>
+    
+
     <div class="claim-block" id="claim-globalisation">
-      <div class="claim-text">&#8220;Globalisation and shifting economic power are cross-cutting trends in the megatrend literature.&#8221; <span class="badge">13 sources</span></div>
-      <div class="claim-note">Megatrend entries referencing globalisation or economic power shifts.</div>
+      <div class="claim-label">Claim</div>
+      <div class="claim-text">&#8220;Globalisation and shifting economic power identified as cross-cutting megatrends relevant to fisheries.&#8221; <span class="badge">13 sources</span></div>
+      <div class="claim-rationale">Globalisation and economic power shifts feature prominently in the cross-sectoral megatrend literature as structural forces reshaping trade relationships, supply chains, and competitive dynamics across all sectors. For fisheries specifically, these forces manifest in the growing dominance of East and Southeast Asian seafood markets, the restructuring of global seafood value chains, and the shifting economic geography of aquaculture production. These trends are well-documented in the megatrend database but relatively absent from the fisheries futures literature, contributing to the Economic gap identified in the gap analysis.</div>
+      <div class="claim-query"><strong>Data query:</strong> Megatrend entries where the Trend field contains 'global', 'econom.*power', or 'shift.*economic' (regex search).</div>
       <table class="evidence-table"><thead><tr><th>trend</th><th>author</th><th>year</th><th>source_type</th><th>steep</th></tr></thead><tbody><tr style="background:#fff3cd"><td>Shifting Economic Power</td><td>Euromonitor international </td><td>2022.0</td><td>?</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Economic power shift</td><td>KPMG</td><td>2014.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#fff3cd"><td>Shift in global economic power</td><td>PWC</td><td>2016.0</td><td>Consultancy</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>Continued Globalization</td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#fff3cd"><td>Economic Powershifts </td><td>HPO center</td><td>2020.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>Globalization</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#d4edda"><td>Global Health</td><td>Department of Environmental Health, Center for Public Health, Medical University of Vienna</td><td>2023.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#fff3cd"><td>globalization</td><td>O. Koppel, O. Parkhomchuk</td><td>2021.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#d4edda"><td>biodiversity and the global climate</td><td>S. Hajkowicz</td><td>2015.0</td><td>Article</td><td>Environmental</td></tr><tr style="background:#fff3cd"><td>globalization and markets of the future</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Economic</td></tr><tr style="background:#cce5ff"><td>global knowledge societey</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Technological</td></tr><tr style="background:#e9ecef"><td>sustainablility and global responsibility</td><td>Christian Krys</td><td>2017.0</td><td>Article</td><td>Other</td></tr><tr style="background:#fff3cd"><td>Global trade shift</td><td>Dimitra Kalaitzi, Aristides Matopoulos, Rosanna Fornasiero, Saskia Sardesai, Ana Cristina Barros, Sébastien Balech, Victoria Muerza</td><td>2020.0</td><td>Article</td><td>Economic</td></tr></tbody></table>
     </div>
     
-<h2 id="s44">4.4 Weak and emerging signals</h2>
+<h2 id="s44">Section 4.4 — Weak and emerging signals</h2>
+<div class="prose-block">
+    <p>Weak signals are early, often ambiguous indicators of potentially significant future
+    changes. Unlike trends — which are already visible and directional — signals are nascent:
+    they may or may not develop into trends, and their interpretation is inherently uncertain.
+    The value of signal monitoring is not prediction but <em>preparedness</em>: by identifying
+    signals early, organisations and research communities can begin developing scenarios and
+    response options before a development becomes a mainstream concern (Hiltunen, 2010;
+    Rossel, 2021).</p>
+
+    <p>The signal database currently contains <strong>5 entries</strong>.
+    Three signals were added in the initial horizon scan conducted as part of this review;
+    the database is designed as a living document and is expected to grow as signal scanning
+    continues. The signal entries documented below each include a detailed description of the
+    signal, the source from which it was identified, and a commentary on its potential
+    relevance to fisheries systems.</p>
+
+    <p>It is important to note that signal detection is explicitly preliminary at this stage.
+    The signals documented here have been identified by a single reviewer drawing on adjacent
+    grey literature, and have not been subject to the structured screening applied to the
+    other two search strategies. They should be understood as <em>candidate signals</em> for
+    further monitoring and investigation, not as confirmed findings.</p>
+    </div>
 
     <div class="claim-block" id="claim-signals">
+      <div class="claim-label">Claim</div>
       <div class="claim-text">&#8220;The signal database contains 5 formally documented entries at the time of writing.&#8221; <span class="badge">5 sources</span></div>
-      <div class="claim-note">All entries in the 'Signals of Future Fisheries' sheet.</div>
-      <table class="evidence-table"><thead><tr><th>trend</th><th>details</th><th>author</th><th>year</th><th>source_type</th></tr></thead><tbody><tr style="background:#ffffff"><td></td><td></td><td></td><td></td><td></td></tr><tr style="background:#ffffff"><td>1, AFOS\</td><td></td><td></td><td></td><td></td></tr><tr style="background:#ffffff"><td>Rise of alternative protein competing with wild-catch seafood</td><td>Precision fermentation and cultivated (cell-based) seafood are moving from laboratory to commercial scale. Companies including BlueNalu (US) and Wildtype (US) have demonstrated cell-cultivated fish fillets; Singapore approved the first commercial sale of cultivated meat in 2020. If cost curves follow those of plant-based meat, price parity with premium wild-caught species could be reached within a decade, with major implications for demand and market structure.</td><td>Horizon scan — compiled by reviewer</td><td>2024.0</td><td>Grey literature / Industry report</td></tr><tr style="background:#ffffff"><td>Autonomous and remotely operated vessels entering commercial fishing</td><td>Several technology companies and fishing nations are trialling autonomous surface vessels (ASVs) and remotely piloted fishing craft. Norway's autonomous cargo vessel Yara Birkeland (launched 2022) demonstrates the technical feasibility of uncrewed vessels in cold-water operations. Japan's Fisheries Agency has funded trials of AI-guided longliners. Automation threatens to decouple fishing capacity from crew availability, with potential implications for labour, safety regulation, and coastal community livelihoods.</td><td>Horizon scan — compiled by reviewer</td><td>2022.0</td><td>Grey literature / News</td></tr><tr style="background:#ffffff"><td>Geopolitical contest over Arctic and sub-Arctic fishing access</td><td>Retreating Arctic sea ice is opening new fishing grounds in the central Arctic Ocean and shifting the ranges of commercially important species northward. The 2018 Agreement to Prevent Unregulated High Seas Fisheries in the Central Arctic Ocean (signed by ten parties) represents the first precautionary governance instrument for this space, but access tensions between Russia, Norway, Iceland, Canada, and the US are intensifying. Projections suggest commercially viable mackerel, herring, and cod stocks may be accessible in central Arctic waters within 10–20 years under high-emissions scenarios.</td><td>Horizon scan — compiled by reviewer</td><td>2019.0</td><td>Academic article / Policy document</td></tr></tbody></table>
+      <div class="claim-rationale">The three signals currently in the database represent three distinct domains of potential disruption for fisheries systems. The rise of precision fermentation and cultivated seafood is primarily an Economic/Technological signal — it threatens the commercial position of wild-catch seafood but also offers new opportunities in food security. Autonomous and remotely operated fishing vessels are a Technological signal with significant Social implications for fishing community employment. Geopolitical competition over Arctic fishing access is a Political signal shaped by the Environmental force of sea-ice retreat. Together they illustrate that weak signals for fisheries frequently cut across STEEP boundaries — a pattern that reinforces the value of a cross-domain foresight approach.</div>
+      <div class="claim-query"><strong>Data query:</strong> All rows in the 'Signals of Future Fisheries' sheet of the Excel database.</div>
+      <table class="evidence-table"><thead><tr><th>trend</th><th>details</th><th>author</th><th>source</th><th>year</th><th>source_type</th></tr></thead><tbody><tr style="background:#ffffff"><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr style="background:#ffffff"><td>1, AFOS\</td><td></td><td></td><td></td><td></td><td></td></tr><tr style="background:#ffffff"><td>Rise of alternative protein competing with wild-catch seafood</td><td>Precision fermentation and cultivated (cell-based) seafood are moving from laboratory to commercial scale. Companies including BlueNalu (US) and Wildtype (US) have demonstrated cell-cultivated fish fillets; Singapore approved the first commercial sale of cultivated meat in 2020. If cost curves follow those of plant-based meat, price parity with premium wild-caught species could be reached within a decade, with major implications for demand and market structure.</td><td>Horizon scan — compiled by reviewer</td><td>https://gfi.org/resource/cultivated-seafood/</td><td>2024.0</td><td>Grey literature / Industry report</td></tr><tr style="background:#ffffff"><td>Autonomous and remotely operated vessels entering commercial fishing</td><td>Several technology companies and fishing nations are trialling autonomous surface vessels (ASVs) and remotely piloted fishing craft. Norway's autonomous cargo vessel Yara Birkeland (launched 2022) demonstrates the technical feasibility of uncrewed vessels in cold-water operations. Japan's Fisheries Agency has funded trials of AI-guided longliners. Automation threatens to decouple fishing capacity from crew availability, with potential implications for labour, safety regulation, and coastal community livelihoods.</td><td>Horizon scan — compiled by reviewer</td><td>https://www.yara.com/news-and-media/news/archive/2022/</td><td>2022.0</td><td>Grey literature / News</td></tr><tr style="background:#ffffff"><td>Geopolitical contest over Arctic and sub-Arctic fishing access</td><td>Retreating Arctic sea ice is opening new fishing grounds in the central Arctic Ocean and shifting the ranges of commercially important species northward. The 2018 Agreement to Prevent Unregulated High Seas Fisheries in the Central Arctic Ocean (signed by ten parties) represents the first precautionary governance instrument for this space, but access tensions between Russia, Norway, Iceland, Canada, and the US are intensifying. Projections suggest commercially viable mackerel, herring, and cod stocks may be accessible in central Arctic waters within 10–20 years under high-emissions scenarios.</td><td>Horizon scan — compiled by reviewer</td><td>https://arcticportal.org/arctic-governance/fisheries</td><td>2019.0</td><td>Academic article / Policy document</td></tr></tbody></table>
     </div>
     
-<hr><p style='font-size:0.8em;color:#999'>Generated by <code>generate_traceability.py</code> — re-run after any database update to keep claims in sync.</p></body></html>
+<hr>
+<p style='font-size:0.8em;color:#999'>Generated by <code>generate_traceability.py</code> on 2026-05-08. Re-run after any database update to keep claims and evidence in sync. Source data: <code>manual_literature_search.xlsx</code>.</p>
+</body></html>
