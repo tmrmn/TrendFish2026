@@ -68,10 +68,13 @@ STEEP_RULES = {
     "Environmental": [
         "climate", "environment", "biodiversity", "ecosystem", "ocean",
         "marine", "sea", "water", "pollution", "habitat", "carbon",
-        "emission", "green", "nature", "resource scarcity", "erosion",
+        "emission", "green", "nature conservation", "nature-based",
+        "natural resource", "natural environment", "resource scarcity", "erosion",
         "deforestation", "renewable energy", "sustainability", "ecology",
-        "fish stock", "overfishing", "fishing", "fisheries", "by-catch",
-        "food web", "carrying capacity",
+        "fish stock", "overfishing", "fishing", "fisheries", "fishery",
+        "fisher", "fishers", "aquaculture", "aquatic", "seafood", "harvest",
+        "catch", "bycatch", "by-catch", "food web", "carrying capacity",
+        "stock assessment", "spawn", "recruitment", "trophic",
     ],
     "Technological": [
         "technolog", "digital", "automation", "artificial intelligence",
@@ -82,19 +85,22 @@ STEEP_RULES = {
     "Economic": [
         "economic", "trade", "market", "finance", "fiscal", "gdp",
         "consumption", "globali", "growth", "debt", "income",
-        "employment", "work", "labour", "labor", "industry",
-        "investment", "supply chain", "demand",
+        "employment", "labour", "labor", "industry",
+        "investment", "supply chain", "demand", "profit", "revenue",
+        "subsid", "cost", "price", "value chain",
     ],
     "Social": [
         "social", "demograph", "population", "urban", "aging", "health",
         "inequalit", "migration", "culture", "education", "wellbeing",
         "well-being", "individual", "community", "consumer",
         "lifestyle", "food security", "gender", "governance of people",
+        "livelihood", "artisanal", "small-scale", "indigenous",
     ],
     "Political": [
         "politic", "governance", "geopolit", "security", "power",
         "regulation", "law", "policy", "democracy", "conflict",
         "supranational", "institution", "global order", "protectionism",
+        "management", "quota", "treaty", "iuu", "compliance",
     ],
 }
 

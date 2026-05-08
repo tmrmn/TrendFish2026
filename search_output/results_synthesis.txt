@@ -1,0 +1,142 @@
+=================================================================
+THEMATIC SYNTHESIS — FOR RESULTS SECTION DRAFTING
+=================================================================
+
+## 3.1 Cross-sectoral megatrends and drivers
+
+Total entries: 145
+Sources: 7 types (Article, Government, Consultancy, Business)
+
+STEEP distribution:
+  Technological     :  41  (28%)
+  Environmental     :  41  (28%)
+  Economic          :  33  (23%)
+  Social            :  18  (12%)
+  Other             :   8  (6%)
+  Political         :   4  (3%)
+
+Top recurring themes (deduplicated by fuzzy title matching):
+  [ 5x] Climate Change
+  [ 4x] Demographics
+  [ 4x] Urbanization
+  [ 4x] Resource Scarcity
+  [ 2x] Technology Developments
+  [ 2x] Individualism
+  [ 2x] Environmental Issues
+  [ 2x] Economic Power Shift
+  [ 2x] Digitalization
+  [ 2x] Demographic Shifts,
+  [ 2x] Shifting Economic Power
+  [ 2x] Globalization
+  [ 2x] Aging Population
+  [ 2x] Urbanization And Smart Cities
+  [ 1x] Public Debt
+
+Key megatrends by STEEP category:
+
+  Environmental:
+    — Aggravating resource scarcity
+    — Climate change and environmental degradation
+    — Continuing urbanisation
+    — Shifting health challenges
+
+  Social:
+    — Widening inequalities
+    — Increasing influence of new governing systems
+    — Increasing significance of migration
+    — Accelerating urbanization
+
+  Technological:
+    — Accelerating technological change and hyperconnectivity
+    — Diversification of education and learning
+    — Technological Advances
+    — Rise of the individual
+
+  Economic:
+    — Changing nature of work
+    — Expanding influence of East and South
+    — Growing consumption
+    — Increasing demographic imbalances
+
+  Political:
+    — Changing security paradigm
+    — Diffusion of Power
+    — changes in geopolitics.
+    — democratization
+
+
+## 3.2 Futures of Fisheries literature
+
+Total usable entries: 60
+
+STEEP distribution:
+  Environmental     :  32  (53%)
+  Other             :  19  (32%)
+  Economic          :   5  (8%)
+  Political         :   3  (5%)
+  Social            :   1  (2%)
+
+Key topics identified:
+  — risk of climate change on coupled marine human and natural systems
+    (The future of fishes and fisheries in the changing oceans.)
+  — overfishing of fish stock
+    (Fishing for the future: An overview of challenges and opportunities)
+  — estruction of fish habitat
+    (Fishing for the future: An overview of challenges and opportunities)
+  — fishing down of marine food webs
+    (Fishing for the future: An overview of challenges and opportunities)
+  — ecological disruption
+    (Fishing for the future: An overview of challenges and opportunities)
+  — by-catch problems
+    (Fishing for the future: An overview of challenges and opportunities)
+  — Demography, globalization and economic development
+    (Food security and marine capture fisheries: characteristics, trends, d)
+  — Governance
+    (Food security and marine capture fisheries: characteristics, trends, d)
+  — Fishing capacity and technological progress
+    (Food security and marine capture fisheries: characteristics, trends, d)
+  — Climate change
+    (Food security and marine capture fisheries: characteristics, trends, d)
+  — Fisheries Production/ capture
+  — Fisheries Production/ capture
+  — Scenario
+  — Fishery Conflict
+  — Fishery Conflict
+  — Consumer Demand
+  — Consumer Demand
+  — economic incentives, coastal planning
+  — recreational fisheries
+  — status quo scenario
+  — Trend and drivers
+  — Trend and drivers
+  — diversification in fishery products
+  — fisheries-conservation hotspots *biology(
+  — Trends and drivers (Socio/ecological)
+  — overview of different lenses for  better fishery management
+  — economic benefit of fisheries and connected challenges
+  — future scenarios for management (In Japan)
+  — participatory MES scenario
+  — economic benefits of restoring overexploited ecosystems
+  — Food security / small scale fisheries / changing fisheries supply
+  — trends in fishery sciences
+  — Overview of diffetent DRIVERS
+  — Lit.review with timeline of changing research topics
+  — impact of climate change on fisheries
+  — trend analysis on the status of marine ecosystems
+  — Fishers of the future
+  — Factors and trends influencing the long-term sustainability and profitability of
+  — Jarić, I., Cvijanović, G., Knežević-Jarić, J., & Lenhardt, M. (2012). Trends in 
+
+
+## 3.3 Gap analysis: megatrends not reflected in fisheries literature
+
+Difference in STEEP coverage (megatrend % minus fisheries %):
+  Environmental     : megatrend=28%  fisheries=53%  gap=-25pp
+  Social            : megatrend=12%  fisheries=2%  gap=+11pp
+  Technological     : megatrend=28%  fisheries=0%  gap=+28pp
+  Economic          : megatrend=23%  fisheries=8%  gap=+14pp
+  Political         : megatrend=3%  fisheries=5%  gap=-2pp
+
+Largest gap: Technological (megatrends=28%, fisheries=0%, gap=+28pp)
+
+=================================================================
