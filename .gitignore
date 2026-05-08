@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Search output — exclude large raw files, keep curated results
+search_output/raw_results.csv
+search_output/deduplicated.csv
+search_output/screened_excluded.csv
+
+# Keep curated outputs in git
+!search_output/screened_included.csv
+!search_output/search_documentation.xlsx
+!search_output/prisma_diagram.png
+!search_output/prisma_counts.json
+!search_output/search_log.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Python envs
+.env
+.venv
+env/
+
+# Claude config (local only)
+.claude/
