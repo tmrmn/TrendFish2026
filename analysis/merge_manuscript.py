@@ -28,7 +28,7 @@ OUT  = DOCS / "Manuscript_Trends_2026.docx"
 SOURCES = [
     ("ABSTRACT",      DOCS / "Abstract_Trends_2026.docx"),
     ("INTRODUCTION",  DOCS / "Introduction_Trends_2026.docx"),
-    ("METHODS",       DOCS / "Method Section Trends.docx"),
+    ("METHODS",       DOCS / "Methods_Trends_2026.docx"),
     ("RESULTS",       DOCS / "Results_Trends_2026.docx"),
     ("DISCUSSION",    DOCS / "Discussion_Trends_2026.docx"),
     ("CONCLUSIONS",   DOCS / "Conclusions_Trends_2026.docx"),
