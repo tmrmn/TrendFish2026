@@ -1032,6 +1032,7 @@ with tab_article:
             text = sections_data.get(s["id"], "")
             actual_wc = len(text.split()) if text.strip() else 0
             sec_rows.append({
+                "done":         bool(s.get("done", False)),
                 "id":           s["id"],
                 "title":        s["title"],
                 "target_words": s["target_words"],
@@ -1052,9 +1053,10 @@ with tab_article:
         st.markdown("**Section outline** — edit target word counts below and save.")
         with st.form("section_outline_form"):
             edited_sec = st.data_editor(
-                sec_df[["id","title","target_words","actual_words"]],
+                sec_df[["done","id","title","target_words","actual_words"]],
                 num_rows="dynamic", use_container_width=True, key="secoutline_de",
                 column_config={
+                    "done":         st.column_config.CheckboxColumn("✓ Done", width="small"),
                     "id":           st.column_config.TextColumn("Section ID"),
                     "title":        st.column_config.TextColumn("Title", width="large"),
                     "target_words": st.column_config.NumberColumn("Target words", format="%d"),
@@ -1071,6 +1073,7 @@ with tab_article:
                             "id":           str(row["id"]).strip(),
                             "title":        str(row.get("title","")).strip(),
                             "target_words": int(row.get("target_words", 0) or 0),
+                            "done":         bool(row.get("done", False)),
                         })
                 article["sections"] = new_sections
                 save_article_structure(article)
@@ -1094,6 +1097,7 @@ with tab_sections:
         for s in sec_list:
             text = sections_data_mgr.get(s["id"], "")
             mgr_rows.append({
+                "done":         bool(s.get("done", False)),
                 "id":           s["id"],
                 "title":        s["title"],
                 "target_words": s["target_words"],
@@ -1101,7 +1105,7 @@ with tab_sections:
             })
         mgr_df = pd.DataFrame(
             mgr_rows if mgr_rows else
-            [{"id": "", "title": "", "target_words": 0, "words_written": 0}]
+            [{"done": False, "id": "", "title": "", "target_words": 0, "words_written": 0}]
         )
         with st.form("sections_manager_form"):
             edited_mgr = st.data_editor(
@@ -1110,6 +1114,7 @@ with tab_sections:
                 use_container_width=True,
                 key="sections_mgr_de",
                 column_config={
+                    "done":         st.column_config.CheckboxColumn("✓ Done", width="small"),
                     "id":           st.column_config.TextColumn(
                         "Section ID",
                         help="Unique key used as filename, e.g. 'introduction'. Lowercase, no spaces.",
@@ -1134,6 +1139,7 @@ with tab_sections:
                         "id":           sid_val,
                         "title":        str(row.get("title") or "").strip(),
                         "target_words": int(row.get("target_words") or 0),
+                        "done":         bool(row.get("done", False)),
                     })
                 article_s["sections"] = new_sections
                 save_article_structure(article_s)
@@ -2262,14 +2268,15 @@ with tab_outputs:
         text = sections_o.get(s["id"], "")
         wc   = len(text.split()) if text.strip() else 0
         sec_status.append({
+            "Done":    bool(s.get("done", False)),
             "Section": s["title"],
             "Words":   wc,
             "Target":  s["target_words"],
-            "Status":  "✓" if wc >= s["target_words"] * 0.5 else "draft" if wc > 0 else "empty",
         })
 
     st.dataframe(pd.DataFrame(sec_status), use_container_width=True, hide_index=True,
                  column_config={
+                     "Done":   st.column_config.CheckboxColumn("✓ Done", width="small"),
                      "Words":  st.column_config.NumberColumn(format="%d"),
                      "Target": st.column_config.NumberColumn(format="%d"),
                  })
