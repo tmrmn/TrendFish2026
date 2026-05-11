@@ -1572,19 +1572,17 @@ with tab_review:
     _uv_vc = pool["user_verdict"].value_counts() if total else {}
     _n_unreviewed = int((pool["user_verdict"].str.strip() == "").sum()) if total else 0
 
-    st.caption("AI")
     ai_mc = st.columns(4)
-    with ai_mc[0]: st.metric("Total papers", total)
-    with ai_mc[1]: st.metric("🟢 Included",  int(_sc_vc.get("green",  0)))
-    with ai_mc[2]: st.metric("🟠 Unsure",    int(_sc_vc.get("orange", 0)))
-    with ai_mc[3]: st.metric("🔴 Excluded",  int(_sc_vc.get("red",    0)))
+    with ai_mc[0]: st.metric("Total papers",    total)
+    with ai_mc[1]: st.metric("🟢 AI Included",  int(_sc_vc.get("green",  0)))
+    with ai_mc[2]: st.metric("🟠 AI Unsure",    int(_sc_vc.get("orange", 0)))
+    with ai_mc[3]: st.metric("🔴 AI Excluded",  int(_sc_vc.get("red",    0)))
 
-    st.caption("User")
     uv_mc = st.columns(4)
-    with uv_mc[0]: st.metric("⬜ Unreviewed", _n_unreviewed)
-    with uv_mc[1]: st.metric("🟢 Included",  int(_uv_vc.get("include", 0)))
-    with uv_mc[2]: st.metric("🟠 Unsure",    int(_uv_vc.get("unsure",  0)))
-    with uv_mc[3]: st.metric("🔴 Excluded",  int(_uv_vc.get("exclude", 0)))
+    with uv_mc[0]: st.metric("⬜ Unreviewed",       _n_unreviewed)
+    with uv_mc[1]: st.metric("🟢 User Included",   int(_uv_vc.get("include", 0)))
+    with uv_mc[2]: st.metric("🟠 User Unsure",     int(_uv_vc.get("unsure",  0)))
+    with uv_mc[3]: st.metric("🔴 User Excluded",   int(_uv_vc.get("exclude", 0)))
 
     if total == 0:
         st.info("No papers in pool yet. Use the 🔍 Search tab to add papers.")
