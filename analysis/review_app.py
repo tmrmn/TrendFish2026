@@ -1529,6 +1529,10 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
             st.metric("Removed duplications", _n_removed)
         with _pm4:
             st.metric("In pool",              _n_pool)
+        if st.checkbox("Show full pool table", key="search_show_pool"):
+            show_df = pool[["title","year","journal","search_query",
+                            "date_added","kw_verdict","user_verdict"]].copy()
+            st.dataframe(show_df, use_container_width=True, height=400)
 
     saved_queries = cfg.get("saved_queries", [])
     if saved_queries:
