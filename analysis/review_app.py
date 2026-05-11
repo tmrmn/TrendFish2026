@@ -1055,11 +1055,11 @@ with tab_article:
 
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
-            st.metric("Total words written", total_actual)
+            st.metric("Word budget", max_words)
         with mc2:
             st.metric("Planned words", total_planned)
         with mc3:
-            st.metric("Word budget", max_words)
+            st.metric("Total words written", total_actual)
         st.progress(pct_used, text=f"{total_actual:,} / {max_words:,} words ({pct_used*100:.0f}%)")
 
         st.markdown("**Section outline** — edit target word counts below and save.")
