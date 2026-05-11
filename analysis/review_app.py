@@ -832,6 +832,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── Password gate ─────────────────────────────────────────────
+_PASSWORD = st.secrets.get("APP_PASSWORD", "") if hasattr(st, "secrets") else ""
+if _PASSWORD:
+    if not st.session_state.get("_authenticated"):
+        st.title("🐟 TrendFish 2026")
+        pwd = st.text_input("Password", type="password", key="_pwd_input")
+        if st.button("Enter", type="primary"):
+            if pwd == _PASSWORD:
+                st.session_state["_authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
+        st.stop()
+
 st.markdown("""
 <style>
 /* Legacy styles */

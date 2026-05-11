@@ -41,3 +41,6 @@ env/
 
 # Claude config (local only)
 .claude/
+
+# Streamlit secrets (never commit)
+.streamlit/secrets.toml
