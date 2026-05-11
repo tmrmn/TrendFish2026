@@ -1958,8 +1958,8 @@ with tab_analysis:
         st.caption("Strategy 1")
         s1_cols = st.columns(6)
         for col, (label, val) in zip(s1_cols, [
-            ("Manual inclusions", s1o.get("n_manual",    "?")),
             ("Retrieved",         s1o.get("n_retrieved", "?")),
+            ("Manual inclusions", s1o.get("n_manual",    "?")),
             ("After dedup",       s1o.get("n_deduped",   "?")),
             ("Screened",          n_reviewed),
             ("Excluded",          n_exclude),
