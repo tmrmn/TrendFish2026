@@ -1954,28 +1954,31 @@ with tab_analysis:
         st.markdown("#### PRISMA counts")
         strategy_o = load_search_strategy()
         s1o = strategy_o.get("strategy1", {})
-        pr1, pr2, pr3 = st.columns(3)
-        with pr1:
-            st.markdown("**Strategy 1 — automated**")
-            for label, val in [
-                ("Retrieved", s1o.get("n_retrieved","?")),
-                ("After dedup", s1o.get("n_deduped","?")),
-                ("Screened", s1o.get("n_screened","?")),
-                ("In pool", total),
-                ("Reviewed", n_reviewed),
-                ("Included", n_include),
-            ]:
-                st.metric(label, val)
-        with pr2:
-            st.markdown("**Strategy 1 — manual**")
-            st.metric("Manual inclusions", s1o.get("n_manual","?"))
-            st.markdown("**Strategy 2**")
-            st.metric("Megatrend entries", len(mega_a))
-        with pr3:
-            st.markdown("**Strategy 3**")
-            st.metric("Signals documented", len(sigs_a))
-            st.markdown("**Combined**")
-            st.metric("Total sources", s1o.get("n_manual",0) + len(mega_a) + len(sigs_a))
+
+        st.caption("Strategy 1")
+        s1_cols = st.columns(7)
+        for col, (label, val) in zip(s1_cols, [
+            ("Retrieved",         s1o.get("n_retrieved", "?")),
+            ("After dedup",       s1o.get("n_deduped",   "?")),
+            ("Screened",          s1o.get("n_screened",  "?")),
+            ("In pool",           total),
+            ("Reviewed",          n_reviewed),
+            ("Included",          n_include),
+            ("Manual inclusions", s1o.get("n_manual",    "?")),
+        ]):
+            with col: st.metric(label, val)
+
+        st.caption("Strategy 2")
+        s2_cols = st.columns(4)
+        with s2_cols[0]: st.metric("Megatrend entries", len(mega_a))
+
+        st.caption("Strategy 3")
+        s3_cols = st.columns(4)
+        with s3_cols[0]: st.metric("Signals documented", len(sigs_a))
+
+        st.caption("Combined")
+        sc_cols = st.columns(4)
+        with sc_cols[0]: st.metric("Total sources", s1o.get("n_manual", 0) + len(mega_a) + len(sigs_a))
 
         st.markdown("---")
         st.markdown("#### Source type breakdown (cross-sectoral megatrends)")
