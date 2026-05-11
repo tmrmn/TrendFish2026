@@ -1580,9 +1580,9 @@ with tab_review:
 
     uv_mc = st.columns(4)
     with uv_mc[0]: st.metric("⬜ Unreviewed",       _n_unreviewed)
-    with uv_mc[1]: st.metric("🟢 Manual Included",   int(_uv_vc.get("include", 0)))
-    with uv_mc[2]: st.metric("🟠 Manual Unsure",     int(_uv_vc.get("unsure",  0)))
-    with uv_mc[3]: st.metric("🔴 Manual Excluded",   int(_uv_vc.get("exclude", 0)))
+    with uv_mc[1]: st.metric("🟢 User Included",   int(_uv_vc.get("include", 0)))
+    with uv_mc[2]: st.metric("🟠 User Unsure",     int(_uv_vc.get("unsure",  0)))
+    with uv_mc[3]: st.metric("🔴 User Excluded",   int(_uv_vc.get("exclude", 0)))
 
     if total == 0:
         st.info("No papers in pool yet. Use the 🔍 Search tab to add papers.")
