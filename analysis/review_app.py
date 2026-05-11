@@ -1529,13 +1529,6 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
     if total == 0:
         st.info("Pool is empty. Run a search to add papers.")
     else:
-        overview_cols = st.columns(4)
-        vc = live_verdicts.value_counts() if total else {}
-        with overview_cols[0]: st.metric("Total papers", total)
-        with overview_cols[1]: st.metric("🟢 AI green",  int(vc.get("green",  0)))
-        with overview_cols[2]: st.metric("🟠 AI orange", int(vc.get("orange", 0)))
-        with overview_cols[3]: st.metric("🔴 AI red",    int(vc.get("red",    0)))
-
         if st.checkbox("Show full pool table"):
             show_df = pool[["title","year","journal","search_query",
                             "date_added","kw_verdict","user_verdict"]].copy()
@@ -1629,6 +1622,13 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
 
 with tab_review:
     st.markdown("<div class='lr-section-header'>📄 Screening</div>", unsafe_allow_html=True)
+
+    _sc_vc = live_verdicts.value_counts() if total else {}
+    _sc_cols = st.columns(4)
+    with _sc_cols[0]: st.metric("Total papers", total)
+    with _sc_cols[1]: st.metric("🟢 AI green",  int(_sc_vc.get("green",  0)))
+    with _sc_cols[2]: st.metric("🟠 AI orange", int(_sc_vc.get("orange", 0)))
+    with _sc_cols[3]: st.metric("🔴 AI red",    int(_sc_vc.get("red",    0)))
 
     with st.expander("ℹ️ How the Review tab works", expanded=False):
         st.markdown("""
