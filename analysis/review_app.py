@@ -986,7 +986,7 @@ with tab_article:
             with a1:
                 new_title   = st.text_input("Title", value=article.get("title",""))
                 new_journal = st.text_input("Target journal", value=article.get("target_journal",""))
-                new_max_wc  = st.number_input("Word budget", min_value=1000, max_value=30000,
+                new_max_wc  = st.number_input("Word limit", min_value=1000, max_value=30000,
                                               value=int(article.get("max_words", 12000)), step=500)
             with a2:
                 new_subtitle = st.text_input("Subtitle", value=article.get("subtitle",""))
@@ -1055,7 +1055,7 @@ with tab_article:
 
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
-            st.metric("Word budget", max_words)
+            st.metric("Word limit", max_words)
         with mc2:
             st.metric("Planned words", total_planned)
         with mc3:
