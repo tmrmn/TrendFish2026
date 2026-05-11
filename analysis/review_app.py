@@ -1548,59 +1548,6 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
             st.metric("Removed duplications", _n_removed)
         with _pm4:
             st.metric("In pool",              _n_pool)
-        if st.checkbox("Show full pool table"):
-            show_df = pool[["title","year","journal","search_query",
-                            "date_added","kw_verdict","user_verdict"]].copy()
-            st.dataframe(show_df, use_container_width=True, height=400)
-
-        n_with_doi    = int((pool["doi"].str.strip() != "").sum())
-        n_with_pdf    = int((pool["pdf_url"].str.strip() != "").sum())
-        n_needs_enrich = n_with_doi - n_with_pdf
-
-        st.markdown("---")
-        enrich_col, enrich_info = st.columns([1, 2])
-        with enrich_col:
-            enrich_btn = st.button("🔗 Fetch open-access links",
-                                   disabled=(n_needs_enrich == 0), use_container_width=True)
-        with enrich_info:
-            st.caption(f"PDF links: **{n_with_pdf}** of {n_with_doi} with DOIs  ·  {n_needs_enrich} remaining")
-
-        if enrich_btn:
-            with st.status("Querying Unpaywall…", expanded=True) as status:
-                def _log(msg): st.write(msg)
-                found, checked = enrich_unpaywall(email=cfg.get("email","tsz000@uit.no"), log_fn=_log)
-                status.update(label=f"Done — {found} / {checked} PDF links found", state="complete")
-            st.rerun()
-
-        st.markdown("")
-        st.markdown("**Export**")
-        exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
-        with exp_col1:
-            st.download_button("⬇️ Full pool (CSV)",
-                data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
-                file_name="full_text_review.csv", mime="text/csv", use_container_width=True)
-        with exp_col2:
-            bib_filter = st.selectbox("BibTeX export",
-                ["Included papers","Included + Unsure","All reviewed","Entire pool"],
-                label_visibility="collapsed")
-            bib_count_map = {
-                "Included papers":   int((pool["user_verdict"]=="include").sum()),
-                "Included + Unsure": int(pool["user_verdict"].isin(["include","unsure"]).sum()),
-                "All reviewed":      int(pool["user_verdict"].str.strip().astype(bool).sum()),
-                "Entire pool":       len(pool),
-            }
-            n_bib = bib_count_map[bib_filter]
-            bib_bytes = _cached_bibtex(bib_filter, pool_mtime) if n_bib > 0 else b""
-            st.download_button(f"⬇️ Export BibTeX ({n_bib})", data=bib_bytes,
-                file_name="trendfish_references.bib", mime="text/plain",
-                disabled=(n_bib == 0), use_container_width=True)
-        with exp_col3:
-            st.caption(
-                f"Included: **{int((pool['user_verdict']=='include').sum())}**  ·  "
-                f"Unsure: **{int((pool['user_verdict']=='unsure').sum())}**  ·  "
-                f"Excluded: **{int((pool['user_verdict']=='exclude').sum())}**  ·  "
-                f"Unreviewed: **{int((pool['user_verdict'].str.strip()=='').sum())}**"
-            )
 
 
 
@@ -1634,6 +1581,62 @@ Use **sidebar filters** to focus on a subset. Verdicts save automatically.
     if total == 0:
         st.info("No papers in pool yet. Use the 🔍 Search tab to add papers.")
         st.stop()
+
+    if st.checkbox("Show full pool table"):
+        show_df = pool[["title","year","journal","search_query",
+                        "date_added","kw_verdict","user_verdict"]].copy()
+        st.dataframe(show_df, use_container_width=True, height=400)
+
+    n_with_doi     = int((pool["doi"].str.strip() != "").sum())
+    n_with_pdf     = int((pool["pdf_url"].str.strip() != "").sum())
+    n_needs_enrich = n_with_doi - n_with_pdf
+
+    st.markdown("---")
+    enrich_col, enrich_info = st.columns([1, 2])
+    with enrich_col:
+        enrich_btn = st.button("🔗 Fetch open-access links",
+                               disabled=(n_needs_enrich == 0), use_container_width=True)
+    with enrich_info:
+        st.caption(f"PDF links: **{n_with_pdf}** of {n_with_doi} with DOIs  ·  {n_needs_enrich} remaining")
+
+    if enrich_btn:
+        with st.status("Querying Unpaywall…", expanded=True) as status:
+            def _log(msg): st.write(msg)
+            found, checked = enrich_unpaywall(email=cfg.get("email","tsz000@uit.no"), log_fn=_log)
+            status.update(label=f"Done — {found} / {checked} PDF links found", state="complete")
+        st.rerun()
+
+    st.markdown("")
+    st.markdown("**Export**")
+    exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
+    with exp_col1:
+        st.download_button("⬇️ Full pool (CSV)",
+            data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
+            file_name="full_text_review.csv", mime="text/csv", use_container_width=True)
+    with exp_col2:
+        bib_filter = st.selectbox("BibTeX export",
+            ["Included papers","Included + Unsure","All reviewed","Entire pool"],
+            label_visibility="collapsed")
+        bib_count_map = {
+            "Included papers":   int((pool["user_verdict"]=="include").sum()),
+            "Included + Unsure": int(pool["user_verdict"].isin(["include","unsure"]).sum()),
+            "All reviewed":      int(pool["user_verdict"].str.strip().astype(bool).sum()),
+            "Entire pool":       len(pool),
+        }
+        n_bib = bib_count_map[bib_filter]
+        bib_bytes = _cached_bibtex(bib_filter, pool_mtime) if n_bib > 0 else b""
+        st.download_button(f"⬇️ Export BibTeX ({n_bib})", data=bib_bytes,
+            file_name="trendfish_references.bib", mime="text/plain",
+            disabled=(n_bib == 0), use_container_width=True)
+    with exp_col3:
+        st.caption(
+            f"Included: **{int((pool['user_verdict']=='include').sum())}**  ·  "
+            f"Unsure: **{int((pool['user_verdict']=='unsure').sum())}**  ·  "
+            f"Excluded: **{int((pool['user_verdict']=='exclude').sum())}**  ·  "
+            f"Unreviewed: **{int((pool['user_verdict'].str.strip()=='').sum())}**"
+        )
+
+    st.markdown("---")
 
     mask = pd.Series([True] * total, index=pool.index)
     if ai_filter != "All":
