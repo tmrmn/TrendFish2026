@@ -19,7 +19,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import openpyxl
 import pandas as pd
+import plotly.express as px
 import requests
 import streamlit as st
 
@@ -28,8 +30,47 @@ DATA_DIR  = BASE / "data"
 IN_CSV    = DATA_DIR / "full_text_review.csv"
 KW_FILE   = DATA_DIR / "review_keywords.json"
 SRCH_FILE = DATA_DIR / "search_config.json"
+EXCEL_FILE   = BASE / "data" / "manual_literature_search.xlsx"
+SIGNALS_FILE = DATA_DIR / "signals.json"
 
 DATA_DIR.mkdir(exist_ok=True)
+
+STEEP_CATS   = ["Environmental", "Technological", "Economic", "Social", "Political", "Other"]
+STEEP_COLORS = {
+    "Environmental": "#2166ac", "Technological": "#1a9641",
+    "Economic":      "#f46d43", "Social":        "#d73027",
+    "Political":     "#762a83", "Other":         "#999999",
+}
+STEEP_RULES = {
+    "Environmental": [
+        "climate","environment","biodiversity","ecosystem","ocean","marine",
+        "sea","water","pollution","habitat","carbon","emission","green",
+        "nature conservation","nature-based","natural resource","resource scarcity",
+        "ecology","fish stock","overfishing","fishing","fisheries","fishery",
+        "fisher","aquaculture","aquatic","seafood","harvest","catch",
+        "bycatch","by-catch","food web","trophic",
+    ],
+    "Technological": [
+        "technolog","digital","automation","artificial intelligence","ai ",
+        "innovation","internet","cyber","robot","autonomous","biotech",
+        "synthetic biology","hyperconnectiv","data-driven","machine learning",
+    ],
+    "Economic": [
+        "economic","trade","market","finance","fiscal","gdp","consumption",
+        "globali","growth","income","employment","labour","labor","industry",
+        "investment","supply chain","demand","subsid","cost","price","value chain",
+    ],
+    "Social": [
+        "social","demograph","population","urban","aging","health","inequalit",
+        "migration","culture","education","wellbeing","well-being","community",
+        "consumer","lifestyle","food security","gender","livelihood",
+        "artisanal","small-scale","indigenous",
+    ],
+    "Political": [
+        "politic","governance","geopolit","security","power","regulation","law",
+        "policy","democracy","conflict","management","quota","treaty","iuu","compliance",
+    ],
+}
 
 # ── Default keyword lists ─────────────────────────────────────
 
@@ -484,6 +525,88 @@ def enrich_unpaywall(email: str, log_fn=None) -> tuple[int, int]:
     return n_found, len(needs)
 
 
+# ── STEEP helpers ────────────────────────────────────────────
+
+def classify_steep(text: str) -> str:
+    if not text or str(text).strip().lower() in ("none", "nan", "?", ""):
+        return "Other"
+    t = str(text).lower()
+    for cat, kws in STEEP_RULES.items():
+        if any(kw in t for kw in kws):
+            return cat
+    return "Other"
+
+
+@st.cache_data
+def load_megatrends(_mtime: float = 0) -> pd.DataFrame:
+    if not EXCEL_FILE.exists():
+        return pd.DataFrame(columns=["trend","details","author","source","title",
+                                     "comments","doi","year","source_type","steep"])
+    df = pd.read_excel(EXCEL_FILE, sheet_name="(Mega-)trends and drivers")
+    df.columns = ["trend","details","author","source","title","comments","doi","year","source_type"]
+    df = df.dropna(subset=["trend"])
+    df = df[~df["trend"].astype(str).str.strip().isin(["","nan"])]
+    type_map = {
+        "Government? (finnish innovation fund)": "Government",
+        "Oxfam discussion paper": "NGO / Think Tank",
+        "Book Chapter": "Book / Chapter",
+        "Book":         "Book / Chapter",
+        "?":            "Unclassified",
+    }
+    df["source_type"] = df["source_type"].replace(type_map)
+    df["steep"] = df.apply(
+        lambda r: classify_steep(str(r["trend"]) + " " + str(r.get("details",""))), axis=1
+    )
+    df["year"] = pd.to_numeric(df["year"], errors="coerce")
+    return df.reset_index(drop=True)
+
+
+@st.cache_data
+def load_fisheries_futures(_mtime: float = 0) -> pd.DataFrame:
+    if not EXCEL_FILE.exists():
+        return pd.DataFrame(columns=["trend","author","title","year","steep"])
+    df = pd.read_excel(EXCEL_FILE, sheet_name="Futures of Fisheries")
+    df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
+    cols = ["trend","details","author","source","title","comments","doi","year","source_type"]
+    df.columns = cols[:len(df.columns)]
+    keep = [c for c in ["trend","details","author","title","year","doi"] if c in df.columns]
+    df = df[keep].dropna(how="all")
+    df["steep"] = df.apply(
+        lambda r: classify_steep(
+            " ".join(str(v) for v in [r.get("trend",""), r.get("details",""), r.get("title","")]
+                     if pd.notna(v))
+        ), axis=1,
+    )
+    df["year"] = pd.to_numeric(df.get("year", pd.Series(dtype=float)), errors="coerce")
+    return df.reset_index(drop=True)
+
+
+def load_signals() -> list[dict]:
+    if SIGNALS_FILE.exists():
+        try:
+            return json.loads(SIGNALS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return []
+
+
+def save_signals(signals: list[dict]):
+    SIGNALS_FILE.write_text(json.dumps(signals, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def add_megatrend_to_excel(row: dict):
+    wb = openpyxl.load_workbook(EXCEL_FILE)
+    ws = wb["(Mega-)trends and drivers"]
+    ws.append([
+        row.get("trend",""), row.get("details",""), row.get("author",""),
+        row.get("source",""), row.get("title",""), row.get("comments",""),
+        row.get("doi",""), row.get("year") or None, row.get("source_type",""),
+    ])
+    wb.save(EXCEL_FILE)
+    load_megatrends.clear()
+    load_fisheries_futures.clear()
+
+
 # ─────────────────────────────────────────────────────────────
 # App layout
 # ─────────────────────────────────────────────────────────────
@@ -526,6 +649,10 @@ if "search_preview"   not in st.session_state:
 if "search_rows"      not in st.session_state:
     st.session_state.search_rows      = [{"id": 0, "op": None, "term": ""}]
     st.session_state.search_next_id   = 1
+if "signals"          not in st.session_state:
+    st.session_state.signals          = load_signals()
+if "editing_signal"   not in st.session_state:
+    st.session_state.editing_signal   = None
 
 kw  = st.session_state.kw
 cfg = st.session_state.search_cfg
@@ -614,7 +741,9 @@ the app and continue later anytime.
 
 # ── Tabs ──────────────────────────────────────────────────────
 
-tab_search, tab_review, tab_keywords = st.tabs(["🔍 Search", "📄 Review", "⚙️ Keywords"])
+tab_search, tab_review, tab_mega, tab_signals, tab_analysis, tab_keywords = st.tabs([
+    "🔍 Search", "📄 Review", "🌍 Megatrends", "📡 Signals", "📊 Analysis", "⚙️ Keywords",
+])
 
 
 # ══════════════════════════════════════════════════════════════
@@ -676,44 +805,8 @@ with tab_search:
     st.markdown("---")
 
     # ── Row-based boolean query builder ───────────────────────
-    builder_col, help_col = st.columns([3, 2])
-
-    with builder_col:
-        st.markdown("#### Build a search query")
-        st.caption("Add one search term per row. Use the AND / OR / NOT dropdown to define the relationship between terms.")
-
-    with help_col:
-        st.markdown("#### Tips & examples")
-        st.markdown("""
-<div style="background:#f8f9fa;border-radius:8px;padding:12px 16px;font-size:0.85rem;line-height:1.6">
-
-**AND** — narrow results (both terms must appear)<br>
-`fisheries` **AND** `climate change`
-
-**OR** — broaden results (either term may appear)<br>
-`aquaculture` **OR** `fish farming`
-
-**NOT** — exclude papers with this term<br>
-`fisheries` **AND** `management` **NOT** `aquaculture`
-
-**Multi-word phrases** are auto-quoted:<br>
-typing *small-scale fisheries* becomes `"small-scale fisheries"`
-
----
-
-**Example queries**
-
-*Futures research on fisheries:*<br>
-`fisheries` AND `future` AND `scenario`
-
-*Broad capture fishery coverage:*<br>
-`fisheries` OR `"fish stocks"` OR `"marine capture"`
-
-*Climate impacts, excluding aquaculture:*<br>
-`fisheries` AND `"climate change"` NOT `aquaculture`
-
-</div>
-""", unsafe_allow_html=True)
+    st.markdown("#### Build a search query")
+    st.caption("Add one search term per row. Use the AND / OR / NOT dropdown to define the relationship between terms.")
 
     rows_to_delete = None
     for i, row in enumerate(st.session_state.search_rows):
@@ -795,6 +888,45 @@ typing *small-scale fisheries* becomes `"small-scale fisheries"`
                 st.session_state.search_cfg = cfg
                 save_search_config(cfg)
             st.success("Query saved.")
+
+    # ── Search tips ───────────────────────────────────────────
+    with st.expander("💡 How to build search queries — tips & examples", expanded=False):
+        st.markdown("""
+**Operators**
+
+| Operator | Effect | Example |
+|----------|--------|---------|
+| **AND** | Both terms must appear — narrows results | `fisheries` AND `climate change` |
+| **OR** | Either term may appear — broadens results | `aquaculture` OR `"fish farming"` |
+| **NOT** | Excludes papers containing this term | `fisheries` AND `management` NOT `aquaculture` |
+
+**Multi-word phrases** are automatically quoted when you type more than one word in a row, so *small-scale fisheries* becomes `"small-scale fisheries"` in the query.
+
+---
+
+**Example queries**
+
+*Futures research on fisheries:*
+```
+fisheries AND future AND scenario
+```
+
+*Broad capture fishery coverage (any of these terms):*
+```
+fisheries OR "fish stocks" OR "marine capture"
+```
+
+*Climate impacts, excluding aquaculture studies:*
+```
+fisheries AND "climate change" NOT aquaculture
+```
+
+*Governance and policy angles:*
+```
+fisheries AND (governance OR policy OR regulation)
+```
+> Note: parentheses are passed directly to OpenAlex and are supported in its full-text search syntax.
+""")
 
     # ── Saved queries ──────────────────────────────────────────
     saved_queries = cfg.get("saved_queries", [])
@@ -1225,7 +1357,426 @@ Click **Matched keywords** to see exactly which terms triggered the score.
 
 
 # ══════════════════════════════════════════════════════════════
-# TAB 3 — KEYWORDS
+# TAB 3 — MEGATRENDS
+# ══════════════════════════════════════════════════════════════
+
+with tab_mega:
+    st.markdown("### Cross-sectoral Megatrends & Drivers")
+    st.caption("Strategy 2 — purposive scan of foresight publications. Source: `data/manual_literature_search.xlsx`")
+
+    with st.expander("ℹ️ How this tab works", expanded=False):
+        st.markdown("""
+**This tab shows the cross-sectoral megatrend database (search strategy 2).**
+
+Entries come from major foresight publications — consultancy reports, government outlook documents,
+academic megatrend analyses, and NGO publications. Each entry is one trend or driver extracted
+from a source.
+
+STEEP classification is applied automatically using keyword matching (same rules as the gap analysis
+in the Analysis tab). You can filter, search, and add new entries directly from here.
+
+> Changes to entries are written back to `data/manual_literature_search.xlsx` immediately.
+""")
+
+    excel_mtime = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+    mega_df = load_megatrends(excel_mtime)
+
+    # ── Filters ───────────────────────────────────────────────
+    f1, f2, f3 = st.columns([2, 2, 3])
+    with f1:
+        steep_filter = st.multiselect(
+            "STEEP category", STEEP_CATS,
+            default=STEEP_CATS, key="mega_steep_filter",
+        )
+    with f2:
+        all_types = sorted(mega_df["source_type"].dropna().unique().tolist())
+        type_filter = st.multiselect(
+            "Source type", all_types, default=all_types, key="mega_type_filter",
+        )
+    with f3:
+        text_search = st.text_input("Search trends/details", key="mega_search",
+                                    placeholder="Type to filter…")
+
+    filtered = mega_df[
+        mega_df["steep"].isin(steep_filter) &
+        mega_df["source_type"].isin(type_filter)
+    ]
+    if text_search:
+        mask = (
+            filtered["trend"].str.contains(text_search, case=False, na=False) |
+            filtered["details"].str.contains(text_search, case=False, na=False)
+        )
+        filtered = filtered[mask]
+
+    st.caption(f"Showing **{len(filtered)}** of {len(mega_df)} entries")
+
+    # ── STEEP distribution chart ──────────────────────────────
+    steep_counts = (
+        filtered["steep"]
+        .value_counts()
+        .reindex(STEEP_CATS, fill_value=0)
+        .reset_index()
+    )
+    steep_counts.columns = ["STEEP", "Count"]
+    steep_counts["Pct"] = (steep_counts["Count"] / len(filtered) * 100).round(1)
+    fig_mega = px.bar(
+        steep_counts, x="STEEP", y="Count",
+        color="STEEP", color_discrete_map=STEEP_COLORS,
+        text=steep_counts["Pct"].apply(lambda v: f"{v:.0f}%"),
+        title="STEEP distribution — cross-sectoral megatrends",
+        height=300,
+    )
+    fig_mega.update_layout(showlegend=False, margin=dict(t=40, b=20))
+    fig_mega.update_traces(textposition="outside")
+    st.plotly_chart(fig_mega, use_container_width=True)
+
+    # ── Table ─────────────────────────────────────────────────
+    display_cols = ["trend","steep","source_type","year","author","source"]
+    st.dataframe(
+        filtered[[c for c in display_cols if c in filtered.columns]],
+        use_container_width=True,
+        height=380,
+        column_config={
+            "trend":       st.column_config.TextColumn("Trend / Driver", width="large"),
+            "steep":       st.column_config.TextColumn("STEEP", width="small"),
+            "source_type": st.column_config.TextColumn("Type", width="small"),
+            "year":        st.column_config.NumberColumn("Year", format="%d", width="small"),
+            "author":      st.column_config.TextColumn("Author", width="medium"),
+            "source":      st.column_config.LinkColumn("Source", width="medium"),
+        },
+    )
+
+    # ── Add new entry ─────────────────────────────────────────
+    st.markdown("---")
+    with st.expander("➕ Add new megatrend entry", expanded=False):
+        with st.form("add_mega_form", clear_on_submit=True):
+            ac1, ac2 = st.columns(2)
+            with ac1:
+                new_trend   = st.text_input("Trend / driver label *")
+                new_author  = st.text_input("Author(s)")
+                new_year    = st.number_input("Year", min_value=1990,
+                                              max_value=2030, value=2024, step=1)
+            with ac2:
+                new_details = st.text_area("Details / description", height=100)
+                new_source  = st.text_input("Source URL or name")
+                new_stype   = st.selectbox("Source type",
+                    ["Article","Consultancy","Government","NGO / Think Tank",
+                     "Book / Chapter","Business","Unclassified"])
+            new_title    = st.text_input("Publication title")
+            new_comments = st.text_area("Comments", height=60)
+            if st.form_submit_button("💾 Save entry", type="primary"):
+                if not new_trend.strip():
+                    st.error("Trend label is required.")
+                else:
+                    add_megatrend_to_excel({
+                        "trend": new_trend, "details": new_details,
+                        "author": new_author, "source": new_source,
+                        "title": new_title, "comments": new_comments,
+                        "doi": "", "year": int(new_year), "source_type": new_stype,
+                    })
+                    st.success(f"Entry '{new_trend}' added to the Excel database.")
+                    st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 4 — SIGNALS
+# ══════════════════════════════════════════════════════════════
+
+with tab_signals:
+    st.markdown("### Weak & Emerging Signals")
+    st.caption("Strategy 3 — living document of early indicators of change. Saved to `data/signals.json`")
+
+    with st.expander("ℹ️ How this tab works", expanded=False):
+        st.markdown("""
+**Weak signals** are early, often ambiguous observations that may indicate incipient shifts in the
+conditions facing fisheries systems. They are not yet prominent in formal academic or institutional
+literature.
+
+Add a signal when you observe something — a news item, a policy development, a market shift, a
+technology announcement — that could be relevant to the future of fisheries. Document it carefully
+with a source and date so it can be verified and cited later.
+
+- **Monitoring** — worth watching, not yet confirmed as significant
+- **Confirmed** — corroborated by multiple independent sources
+- **Dismissed** — turned out to be noise or not relevant
+
+> Signals are saved to `data/signals.json` and can be exported from the Analysis tab.
+""")
+
+    signals = st.session_state.signals
+
+    STATUS_COLORS = {
+        "Monitoring": "#fd7e14", "Confirmed": "#28a745", "Dismissed": "#6c757d",
+    }
+
+    # ── Add new signal ─────────────────────────────────────────
+    with st.expander("➕ Add new signal", expanded=(len(signals) == 0)):
+        with st.form("add_signal_form", clear_on_submit=True):
+            s1, s2 = st.columns(2)
+            with s1:
+                sig_title  = st.text_input("Signal title *")
+                sig_source = st.text_input("Source name")
+                sig_date   = st.text_input("Date observed (YYYY-MM-DD)",
+                                           value=datetime.today().strftime("%Y-%m-%d"))
+                sig_steep  = st.selectbox("STEEP category", STEEP_CATS)
+                sig_status = st.selectbox("Status", ["Monitoring","Confirmed","Dismissed"])
+            with s2:
+                sig_desc  = st.text_area("Description *", height=110,
+                    placeholder="What is happening? Why might it matter?")
+                sig_url   = st.text_input("Source URL")
+                sig_rel   = st.text_area("Fisheries relevance", height=80,
+                    placeholder="How could this signal affect fisheries systems?")
+            if st.form_submit_button("💾 Save signal", type="primary"):
+                if not sig_title.strip() or not sig_desc.strip():
+                    st.error("Title and description are required.")
+                else:
+                    new_id  = max((s["id"] for s in signals), default=0) + 1
+                    signals.append({
+                        "id": new_id, "title": sig_title, "description": sig_desc,
+                        "source": sig_source, "url": sig_url, "date": sig_date,
+                        "steep": sig_steep, "fisheries_relevance": sig_rel,
+                        "status": sig_status,
+                    })
+                    st.session_state.signals = signals
+                    save_signals(signals)
+                    st.success(f"Signal '{sig_title}' saved.")
+                    st.rerun()
+
+    st.markdown("---")
+    if not signals:
+        st.info("No signals documented yet. Use the form above to add the first one.")
+    else:
+        st.markdown(f"**{len(signals)} signal{'s' if len(signals) != 1 else ''} documented**")
+        for sig in signals:
+            sid        = sig["id"]
+            s_color    = STEEP_COLORS.get(sig["steep"], "#999")
+            st_color   = STATUS_COLORS.get(sig["status"], "#999")
+            is_editing = (st.session_state.editing_signal == sid)
+
+            with st.container(border=True):
+                h1, h2 = st.columns([5, 1])
+                with h1:
+                    st.markdown(
+                        f"<span style='background:{s_color};color:white;padding:2px 8px;"
+                        f"border-radius:4px;font-size:0.8rem'>{sig['steep']}</span>&nbsp;&nbsp;"
+                        f"**{sig['title']}**&nbsp;&nbsp;"
+                        f"<span style='color:#888;font-size:0.85rem'>{sig.get('date','')}</span>",
+                        unsafe_allow_html=True,
+                    )
+                with h2:
+                    btn1, btn2 = st.columns(2)
+                    with btn1:
+                        if st.button("✏️", key=f"edit_sig_{sid}", help="Edit"):
+                            st.session_state.editing_signal = None if is_editing else sid
+                            st.rerun()
+                    with btn2:
+                        if st.button("🗑", key=f"del_sig_{sid}", help="Delete"):
+                            st.session_state.signals = [s for s in signals if s["id"] != sid]
+                            save_signals(st.session_state.signals)
+                            st.rerun()
+
+                if not is_editing:
+                    st.markdown(sig["description"])
+                    if sig.get("fisheries_relevance"):
+                        st.caption(f"*Fisheries relevance:* {sig['fisheries_relevance']}")
+                    foot1, foot2 = st.columns([3, 1])
+                    with foot1:
+                        if sig.get("url"):
+                            st.markdown(f"[{sig.get('source') or sig['url']}]({sig['url']})")
+                        elif sig.get("source"):
+                            st.caption(sig["source"])
+                    with foot2:
+                        st.markdown(
+                            f"<div style='text-align:right;color:{st_color};"
+                            f"font-size:0.85rem'>● {sig['status']}</div>",
+                            unsafe_allow_html=True,
+                        )
+                else:
+                    with st.form(f"edit_sig_form_{sid}", clear_on_submit=False):
+                        e1, e2 = st.columns(2)
+                        with e1:
+                            e_title  = st.text_input("Title", value=sig["title"])
+                            e_source = st.text_input("Source", value=sig.get("source",""))
+                            e_date   = st.text_input("Date", value=sig.get("date",""))
+                            e_steep  = st.selectbox("STEEP", STEEP_CATS,
+                                index=STEEP_CATS.index(sig["steep"]) if sig["steep"] in STEEP_CATS else 0)
+                            e_status = st.selectbox("Status",
+                                ["Monitoring","Confirmed","Dismissed"],
+                                index=["Monitoring","Confirmed","Dismissed"].index(sig["status"]))
+                        with e2:
+                            e_desc = st.text_area("Description", value=sig["description"], height=110)
+                            e_url  = st.text_input("URL", value=sig.get("url",""))
+                            e_rel  = st.text_area("Fisheries relevance",
+                                                  value=sig.get("fisheries_relevance",""), height=80)
+                        if st.form_submit_button("💾 Save changes"):
+                            for s in st.session_state.signals:
+                                if s["id"] == sid:
+                                    s.update({"title": e_title, "description": e_desc,
+                                              "source": e_source, "url": e_url,
+                                              "date": e_date, "steep": e_steep,
+                                              "fisheries_relevance": e_rel, "status": e_status})
+                            save_signals(st.session_state.signals)
+                            st.session_state.editing_signal = None
+                            st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 5 — ANALYSIS
+# ══════════════════════════════════════════════════════════════
+
+with tab_analysis:
+    st.markdown("### Analysis & Gap Overview")
+
+    with st.expander("ℹ️ How this tab works", expanded=False):
+        st.markdown("""
+This tab brings together all three search strategies to give you a live overview of:
+
+- **Review progress** — how far through the 720-paper screening you are
+- **STEEP gap analysis** — how the cross-sectoral megatrend literature compares to the fisheries
+  futures literature across Social, Technological, Economic, Environmental, and Political domains
+- **PRISMA counts** — the headline numbers for the PRISMA 2020 flow diagram
+- **Source type breakdown** — what kinds of sources are in the megatrend database
+
+The gap analysis is the central finding of the manuscript: fisheries futures research is
+dominated by environmental drivers (53%) and has zero technological entries, versus 28% for
+both in the cross-sectoral literature.
+""")
+
+    excel_mtime_a = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+    mega_a = load_megatrends(excel_mtime_a)
+    fish_a = load_fisheries_futures(excel_mtime_a)
+    sigs_a = st.session_state.signals
+
+    # ── A — Review progress ────────────────────────────────────
+    st.markdown("#### Review progress")
+    n_total    = len(pool)
+    n_reviewed = int(pool["user_verdict"].str.strip().astype(bool).sum())
+    n_include  = int((pool["user_verdict"] == "include").sum())
+    n_unsure   = int((pool["user_verdict"] == "unsure").sum())
+    n_exclude  = int((pool["user_verdict"] == "exclude").sum())
+    n_pending  = n_total - n_reviewed
+    pct = n_reviewed / n_total * 100 if n_total > 0 else 0
+
+    prog_cols = st.columns(6)
+    for col, label, val, color in zip(
+        prog_cols,
+        ["Total pool","Reviewed","Pending","✅ Included","⚠️ Unsure","❌ Excluded"],
+        [n_total, n_reviewed, n_pending, n_include, n_unsure, n_exclude],
+        ["#0d6efd","#6c757d","#fd7e14","#28a745","#fd7e14","#dc3545"],
+    ):
+        with col:
+            st.markdown(
+                f"<div style='text-align:center'>"
+                f"<div style='font-size:1.6rem;font-weight:700;color:{color}'>{val}</div>"
+                f"<div style='font-size:0.8rem;color:#555'>{label}</div></div>",
+                unsafe_allow_html=True,
+            )
+
+    st.progress(pct / 100, text=f"{pct:.1f}% screened ({n_reviewed} / {n_total})")
+
+    # ── B — STEEP gap analysis ─────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### STEEP gap analysis")
+    st.caption("Percentage-point difference between cross-sectoral megatrends and fisheries futures literature.")
+
+    cats_5 = [c for c in STEEP_CATS if c != "Other"]
+
+    def steep_pct(df: pd.DataFrame) -> dict[str, float]:
+        if df.empty:
+            return {c: 0.0 for c in cats_5}
+        counts = df["steep"].value_counts()
+        total  = len(df)
+        return {c: round(counts.get(c, 0) / total * 100, 1) for c in cats_5}
+
+    mega_pct = steep_pct(mega_a)
+    fish_pct = steep_pct(fish_a)
+    gap_pct  = {c: round(mega_pct[c] - fish_pct[c], 1) for c in cats_5}
+
+    chart_cols = st.columns(3)
+
+    def make_bar(title, data_dict, colors):
+        df_c = pd.DataFrame({"STEEP": list(data_dict.keys()), "Pct": list(data_dict.values())})
+        fig  = px.bar(df_c, x="STEEP", y="Pct", color="STEEP",
+                      color_discrete_map=colors,
+                      text=df_c["Pct"].apply(lambda v: f"{v:.0f}%"),
+                      title=title, height=320)
+        fig.update_layout(showlegend=False, margin=dict(t=40, b=20),
+                          yaxis=dict(range=[0, 65], title="%"))
+        fig.update_traces(textposition="outside")
+        return fig
+
+    with chart_cols[0]:
+        st.plotly_chart(make_bar("Cross-sectoral megatrends", mega_pct, STEEP_COLORS),
+                        use_container_width=True)
+    with chart_cols[1]:
+        st.plotly_chart(make_bar("Fisheries futures literature", fish_pct, STEEP_COLORS),
+                        use_container_width=True)
+    with chart_cols[2]:
+        gap_colors = {c: ("#dc3545" if v >= 5 else "#28a745" if v <= -5 else "#adb5bd")
+                      for c, v in gap_pct.items()}
+        df_gap = pd.DataFrame({"STEEP": list(gap_pct.keys()), "Gap (pp)": list(gap_pct.values())})
+        fig_gap = px.bar(df_gap, x="STEEP", y="Gap (pp)", color="STEEP",
+                         color_discrete_map=gap_colors,
+                         text=df_gap["Gap (pp)"].apply(lambda v: f"{v:+.0f}pp"),
+                         title="Gap (megatrends − fisheries)", height=320)
+        fig_gap.update_layout(showlegend=False, margin=dict(t=40, b=20),
+                              yaxis=dict(title="Percentage points"))
+        fig_gap.update_traces(textposition="outside")
+        st.plotly_chart(fig_gap, use_container_width=True)
+
+    st.caption("🔴 Red = underrepresented in fisheries research  ·  🟢 Green = overrepresented")
+
+    gap_table = pd.DataFrame({
+        "STEEP":       cats_5,
+        "Megatrends %": [mega_pct[c] for c in cats_5],
+        "Fisheries %":  [fish_pct[c] for c in cats_5],
+        "Gap (pp)":     [gap_pct[c]  for c in cats_5],
+    })
+    st.dataframe(gap_table, use_container_width=True, hide_index=True,
+                 column_config={"Gap (pp)": st.column_config.NumberColumn(format="%.1f")})
+
+    # ── C — PRISMA counts ──────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### PRISMA flow counts")
+
+    pr1, pr2, pr3 = st.columns(3)
+    with pr1:
+        st.markdown("**Strategy 1 — peer-reviewed (automated)**")
+        st.metric("OpenAlex records retrieved", "2,100")
+        st.metric("After deduplication", "1,621")
+        st.metric("Passed title/abstract screen", "720")
+        st.metric("Pending full-text review", n_pending)
+        st.metric("Reviewed", n_reviewed)
+        st.metric("Included", n_include)
+    with pr2:
+        st.markdown("**Strategy 1 — peer-reviewed (manual)**")
+        st.metric("Manual inclusions", "60")
+        st.markdown("**Strategy 2 — cross-sectoral**")
+        st.metric("Megatrend entries (Excel)", len(mega_a))
+    with pr3:
+        st.markdown("**Strategy 3 — signals**")
+        st.metric("Signals documented", len(sigs_a))
+        st.markdown("**Combined**")
+        st.metric("Total sources (all strategies)", 60 + len(mega_a) + len(sigs_a))
+
+    # ── D — Source type breakdown ──────────────────────────────
+    st.markdown("---")
+    st.markdown("#### Source type breakdown (cross-sectoral megatrends)")
+    type_counts = (
+        mega_a["source_type"]
+        .value_counts()
+        .reset_index()
+    )
+    type_counts.columns = ["Source type", "Count"]
+    fig_pie = px.pie(type_counts, names="Source type", values="Count",
+                     color_discrete_sequence=px.colors.qualitative.Set2,
+                     height=350)
+    fig_pie.update_layout(margin=dict(t=20, b=20))
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 6 — KEYWORDS
 # ══════════════════════════════════════════════════════════════
 
 with tab_keywords:
