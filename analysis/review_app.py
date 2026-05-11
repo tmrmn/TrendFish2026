@@ -1234,8 +1234,14 @@ with tab_strategy:
 
     strategy = load_search_strategy()
 
+    strat_sub = st.radio(
+        "view", ["📚 Strategy 1", "🌍 Strategy 2", "📡 Strategy 3", "📊 PRISMA Summary"],
+        horizontal=True, label_visibility="collapsed",
+    )
+
     # ── Strategy 1 ────────────────────────────────────────────
-    with st.expander("Strategy 1 — Peer-reviewed literature (OpenAlex)", expanded=True):
+    if strat_sub == "📚 Strategy 1":
+        st.markdown("**Strategy 1 — Peer-reviewed literature (OpenAlex)**")
         s1 = strategy.get("strategy1", {})
         with st.form("strat1_form"):
             st1_purpose  = st.text_area("Purpose", value=s1.get("purpose",""), height=70)
@@ -1282,7 +1288,8 @@ with tab_strategy:
                 st.success("Strategy 1 saved.")
 
     # ── Strategy 2 ────────────────────────────────────────────
-    with st.expander("Strategy 2 — Cross-sectoral megatrends (purposive scan)", expanded=False):
+    elif strat_sub == "🌍 Strategy 2":
+        st.markdown("**Strategy 2 — Cross-sectoral megatrends (purposive scan)**")
         s2 = strategy.get("strategy2", {})
         with st.form("strat2_form"):
             st2_purpose = st.text_area("Purpose", value=s2.get("purpose",""), height=70)
@@ -1307,7 +1314,8 @@ with tab_strategy:
                 st.success("Strategy 2 saved.")
 
     # ── Strategy 3 ────────────────────────────────────────────
-    with st.expander("Strategy 3 — Horizon scan for weak signals (living document)", expanded=False):
+    elif strat_sub == "📡 Strategy 3":
+        st.markdown("**Strategy 3 — Horizon scan for weak signals (living document)**")
         s3 = strategy.get("strategy3", {})
         with st.form("strat3_form"):
             st3_purpose = st.text_area("Purpose", value=s3.get("purpose",""), height=70)
@@ -1326,35 +1334,34 @@ with tab_strategy:
                 st.success("Strategy 3 saved.")
 
     # ── PRISMA summary ─────────────────────────────────────────
-    st.markdown("---")
-    st.markdown("#### PRISMA flow summary (live)")
+    else:
+        st.markdown("**PRISMA flow summary (live)**")
+        s1_data  = strategy.get("strategy1", {})
+        excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+        mega_cnt = len(load_megatrends(excel_mt))
+        sig_cnt  = len(st.session_state.signals)
+        n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
 
-    s1_data  = strategy.get("strategy1", {})
-    excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
-    mega_cnt = len(load_megatrends(excel_mt))
-    sig_cnt  = len(st.session_state.signals)
-    n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
-
-    pc1, pc2, pc3 = st.columns(3)
-    with pc1:
-        st.markdown("**Strategy 1 — automated**")
-        for label, val in [
-            ("Retrieved", s1_data.get("n_retrieved", "?")),
-            ("After dedup", s1_data.get("n_deduped", "?")),
-            ("Screened", s1_data.get("n_screened", "?")),
-            ("In pool", total),
-            ("Reviewed", n_reviewed),
-            ("Included", n_inc),
-        ]:
-            st.metric(label, val)
-    with pc2:
-        st.markdown("**Strategy 1 — manual**")
-        st.metric("Manual inclusions", s1_data.get("n_manual", "?"))
-        st.markdown("**Strategy 2**")
-        st.metric("Megatrend entries", mega_cnt)
-    with pc3:
-        st.markdown("**Strategy 3**")
-        st.metric("Signals documented", sig_cnt)
+        pc1, pc2, pc3 = st.columns(3)
+        with pc1:
+            st.markdown("**Strategy 1 — automated**")
+            for label, val in [
+                ("Retrieved", s1_data.get("n_retrieved", "?")),
+                ("After dedup", s1_data.get("n_deduped", "?")),
+                ("Screened", s1_data.get("n_screened", "?")),
+                ("In pool", total),
+                ("Reviewed", n_reviewed),
+                ("Included", n_inc),
+            ]:
+                st.metric(label, val)
+        with pc2:
+            st.markdown("**Strategy 1 — manual**")
+            st.metric("Manual inclusions", s1_data.get("n_manual", "?"))
+            st.markdown("**Strategy 2**")
+            st.metric("Megatrend entries", mega_cnt)
+        with pc3:
+            st.markdown("**Strategy 3**")
+            st.metric("Signals documented", sig_cnt)
 
 
 # ══════════════════════════════════════════════════════════════
