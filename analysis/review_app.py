@@ -1675,6 +1675,56 @@ Scores are computed automatically from title and abstract using keyword matching
             columns={"_ai": "AI verdict", "user_verdict": "Reviewer verdict"})
         st.dataframe(ai_show, use_container_width=True, height=500)
 
+        st.markdown("---")
+        st.markdown("#### Keyword Configuration")
+        st.caption("Edit keyword lists used for AI pre-screening. Changes apply instantly to scoring.")
+
+        kw_changed = False
+        new_kw     = {}
+        groups = [
+            ("🐟 Fisheries relevance", ["fish_strong","fish_med","fish_context"]),
+            ("🔭 Future orientation",  ["future_strong","future_med","future_weak"]),
+            ("🚫 Exclusion criteria",  ["excl_retro","excl_bio","excl_nonfish"]),
+        ]
+        for group_label, keys in groups:
+            st.markdown(f"**{group_label}**")
+            cols = st.columns(len(keys))
+            for col, key in zip(cols, keys):
+                label, weight, color = KEYWORD_META[key]
+                with col:
+                    st.markdown(
+                        f"<div style='color:{color};font-weight:600;margin-bottom:2px'>{label}</div>"
+                        f"<div style='font-size:0.75rem;color:#888;margin-bottom:6px'>{weight}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    edited = st.data_editor(
+                        pd.DataFrame({"keyword": kw.get(key, [])}),
+                        num_rows="dynamic", use_container_width=True,
+                        hide_index=True, key=f"de_{key}",
+                        column_config={"keyword": st.column_config.TextColumn("Keyword / phrase", max_chars=120)},
+                    )
+                    st.caption("Checkbox + Delete to remove.")
+                    parsed = [v.strip().lower() for v in edited["keyword"].dropna() if str(v).strip()]
+                    new_kw[key] = parsed
+                    if parsed != kw.get(key):
+                        kw_changed = True
+            st.markdown("")
+
+        if kw_changed:
+            st.session_state.kw = new_kw
+
+        act_l, act_r, _ = st.columns([1, 1, 3])
+        with act_l:
+            if st.button("💾 Save keywords", use_container_width=True):
+                save_keywords(st.session_state.kw)
+                st.success(f"Saved → {KW_FILE.name}")
+        with act_r:
+            if st.button("↺ Reset to defaults", use_container_width=True):
+                for key in DEFAULT_KW:
+                    st.session_state.pop(f"de_{key}", None)
+                st.session_state.kw = {k: list(v) for k, v in DEFAULT_KW.items()}
+                st.rerun()
+
     # ── Sub-tab 3: Manual screening ────────────────────────────
     elif sc_sub == "📝 Manual screening":
         with st.expander("ℹ️ How manual screening works", expanded=False):
@@ -1915,7 +1965,7 @@ with tab_analysis:
 
     sub_nav = st.radio(
         "analysis_sub",
-        ["Overview", "STEEP Gap", "Megatrends", "Signals", "Keywords"],
+        ["Overview", "STEEP Gap", "Megatrends", "Signals"],
         horizontal=True,
         label_visibility="collapsed",
     )
@@ -2238,57 +2288,6 @@ with tab_analysis:
                                 st.session_state.editing_signal = None
                                 st.rerun()
 
-    # ── Keywords ───────────────────────────────────────────────
-    elif sub_nav == "Keywords":
-        st.markdown("#### Keyword Configuration")
-        st.caption("Edit keyword lists used for AI pre-screening. Changes apply instantly to Review tab scoring.")
-
-        kw_changed = False
-        new_kw     = {}
-        groups = [
-            ("🐟 Fisheries relevance", ["fish_strong","fish_med","fish_context"]),
-            ("🔭 Future orientation",  ["future_strong","future_med","future_weak"]),
-            ("🚫 Exclusion criteria",  ["excl_retro","excl_bio","excl_nonfish"]),
-        ]
-        for group_label, keys in groups:
-            st.markdown(f"#### {group_label}")
-            cols = st.columns(len(keys))
-            for col, key in zip(cols, keys):
-                label, weight, color = KEYWORD_META[key]
-                with col:
-                    st.markdown(
-                        f"<div style='color:{color};font-weight:600;margin-bottom:2px'>{label}</div>"
-                        f"<div style='font-size:0.75rem;color:#888;margin-bottom:6px'>{weight}</div>",
-                        unsafe_allow_html=True,
-                    )
-                    edited = st.data_editor(
-                        pd.DataFrame({"keyword": kw.get(key, [])}),
-                        num_rows="dynamic", use_container_width=True,
-                        hide_index=True, key=f"de_{key}",
-                        column_config={"keyword": st.column_config.TextColumn("Keyword / phrase", max_chars=120)},
-                    )
-                    st.caption("Checkbox + Delete to remove.")
-                    parsed = [v.strip().lower() for v in edited["keyword"].dropna() if str(v).strip()]
-                    new_kw[key] = parsed
-                    if parsed != kw.get(key):
-                        kw_changed = True
-            st.markdown("")
-
-        if kw_changed:
-            st.session_state.kw = new_kw
-
-        st.markdown("---")
-        act_l, act_r, _ = st.columns([1, 1, 3])
-        with act_l:
-            if st.button("💾 Save to file", use_container_width=True):
-                save_keywords(st.session_state.kw)
-                st.success(f"Saved → {KW_FILE.name}")
-        with act_r:
-            if st.button("↺ Reset to defaults", use_container_width=True):
-                for key in DEFAULT_KW:
-                    st.session_state.pop(f"de_{key}", None)
-                st.session_state.kw = {k: list(v) for k, v in DEFAULT_KW.items()}
-                st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════
