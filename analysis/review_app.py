@@ -1656,26 +1656,6 @@ with tab_review:
 
     # ── Sub-tab 2: AI screening ────────────────────────────────
     elif sc_sub == "🤖 AI screening":
-        with st.expander("ℹ️ How AI screening works", expanded=False):
-            st.markdown("""
-- 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
-- 🟠 **ORANGE** — borderline or missing abstract → needs your judgement
-- 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
-
-Scores are computed automatically from title and abstract using keyword matching.
-""")
-        ai_view_filter = st.radio("Show", ["All", "🟢 Green", "🟠 Orange", "🔴 Red"],
-                                  horizontal=True)
-        verdict_map = {"🟢 Green": "green", "🟠 Orange": "orange", "🔴 Red": "red"}
-        ai_rows = pool.copy()
-        ai_rows["_ai"] = live_verdicts
-        if ai_view_filter != "All":
-            ai_rows = ai_rows[ai_rows["_ai"] == verdict_map[ai_view_filter]]
-        ai_show = ai_rows[["title","year","journal","_ai","user_verdict"]].rename(
-            columns={"_ai": "AI verdict", "user_verdict": "Reviewer verdict"})
-        st.dataframe(ai_show, use_container_width=True, height=500)
-
-        st.markdown("---")
         st.markdown("#### Keyword Configuration")
         st.caption("Edit keyword lists used for AI pre-screening. Changes apply instantly to scoring.")
 
@@ -1724,6 +1704,26 @@ Scores are computed automatically from title and abstract using keyword matching
                     st.session_state.pop(f"de_{key}", None)
                 st.session_state.kw = {k: list(v) for k, v in DEFAULT_KW.items()}
                 st.rerun()
+
+        st.markdown("---")
+        with st.expander("ℹ️ How AI screening works", expanded=False):
+            st.markdown("""
+- 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
+- 🟠 **ORANGE** — borderline or missing abstract → needs your judgement
+- 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
+
+Scores are computed automatically from title and abstract using keyword matching.
+""")
+        ai_view_filter = st.radio("Show", ["All", "🟢 Green", "🟠 Orange", "🔴 Red"],
+                                  horizontal=True)
+        verdict_map = {"🟢 Green": "green", "🟠 Orange": "orange", "🔴 Red": "red"}
+        ai_rows = pool.copy()
+        ai_rows["_ai"] = live_verdicts
+        if ai_view_filter != "All":
+            ai_rows = ai_rows[ai_rows["_ai"] == verdict_map[ai_view_filter]]
+        ai_show = ai_rows[["title","year","journal","_ai","user_verdict"]].rename(
+            columns={"_ai": "AI verdict", "user_verdict": "Reviewer verdict"})
+        st.dataframe(ai_show, use_container_width=True, height=500)
 
     # ── Sub-tab 3: Manual screening ────────────────────────────
     elif sc_sub == "📝 Manual screening":
