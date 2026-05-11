@@ -906,56 +906,61 @@ with st.sidebar:
 
     with st.expander("❓ Quick start", expanded=False):
         st.markdown("""
-**Seven tabs — use in order:**
+**Eight tabs — use in order:**
 
 1. **📋 Article** — define article structure and metadata
-2. **✍️ Sections** — write and edit section drafts
-3. **🔎 Strategy** — document your search strategy
+2. **📝 Sections** — plan each section with notes
+3. **🔎 Search Strategy** — document your search strategy
 4. **🔍 Search** — fetch papers from OpenAlex
-5. **📄 Review** — screen papers one by one
+5. **📄 Screening** — screen and review papers
 6. **📊 Analysis** — STEEP gap, megatrends, signals
-7. **📤 Outputs** — generate manuscript and exports
+7. **✍️ Draft** — write and edit section drafts
+8. **📤 Outputs** — generate manuscript and exports
 
 Progress saved to `data/` automatically.
 """)
 
+    st.markdown("---")
+    st.markdown("**Review status**")
     st.metric("Papers in pool", total)
     st.metric("Reviewed", f"{n_reviewed} / {total}")
     if total:
         st.progress(n_reviewed / total)
 
-    st.markdown("**Your verdicts**")
-    for key, (icon, label, bg, col) in VERDICTS.items():
-        n = int((pool["user_verdict"] == key).sum()) if total else 0
-        st.markdown(
-            f"<span style='color:{col};font-weight:700'>{icon} {label}</span>: {n}",
-            unsafe_allow_html=True,
-        )
+    if total:
+        _sb_uv = pool["user_verdict"].value_counts()
+        for key, (icon, label, bg, col) in VERDICTS.items():
+            n = int((pool["user_verdict"] == key).sum())
+            st.markdown(
+                f"<span style='color:{col};font-weight:700'>{icon} {label}</span>: {n}",
+                unsafe_allow_html=True,
+            )
 
     st.markdown("---")
-    st.subheader("Review filters")
+    st.markdown("**To-do**")
 
-    if total:
-        vc = live_verdicts.value_counts()
-        st.markdown(
-            f"<span style='color:#28a745'>● {vc.get('green',0)}</span> &nbsp;"
-            f"<span style='color:#fd7e14'>● {vc.get('orange',0)}</span> &nbsp;"
-            f"<span style='color:#dc3545'>● {vc.get('red',0)}</span>",
-            unsafe_allow_html=True,
-        )
+    _sb_secs    = load_sections()
+    _sb_seclist = load_article_structure().get("sections", [])
+    _sb_n_notes = sum(1 for s in _sb_seclist if _sb_secs.get(f"secnotes_{s['id']}", "").strip())
+    _sb_n_draft = sum(1 for s in _sb_seclist if _sb_secs.get(f"sectext_{s['id']}",  "").strip())
+    _sb_n_secs  = len(_sb_seclist)
+    _sb_strategy = load_search_strategy()
 
-    ai_filter = st.selectbox(
-        "AI keyword verdict",
-        ["All", "green", "orange", "red"],
-        index=["All", "green", "orange", "red"].index(st.session_state.filter_verdict),
-    )
-    reviewed_filter = st.selectbox(
-        "Review status",
-        ["All", "Unreviewed", "Reviewed"],
-        index=["All", "Unreviewed", "Reviewed"].index(st.session_state.filter_reviewed),
-    )
-    st.session_state.filter_verdict  = ai_filter
-    st.session_state.filter_reviewed = reviewed_filter
+    def _todo(done, label):
+        icon = "✅" if done else "⬜"
+        st.markdown(f"{icon} {label}")
+
+    _todo(_sb_n_secs > 0,                              f"Define sections ({_sb_n_secs})")
+    _todo(_sb_n_notes == _sb_n_secs and _sb_n_secs>0, f"Section notes ({_sb_n_notes}/{_sb_n_secs})")
+    _todo(bool(_sb_strategy.get("strategy1",{}).get("queries")), "Search strategy 1 set")
+    _todo(total > 0,                                   f"Papers in pool ({total})")
+    _todo(total > 0 and n_reviewed == total,           f"All papers screened ({n_reviewed}/{total})")
+    _n_inc = int((pool["user_verdict"]=="include").sum()) if total else 0
+    _todo(_n_inc > 0,                                  f"Papers included ({_n_inc})")
+    _todo(_sb_n_draft > 0,                             f"Sections drafted ({_sb_n_draft}/{_sb_n_secs})")
+
+ai_filter       = st.session_state.filter_verdict
+reviewed_filter = st.session_state.filter_reviewed
 
 # ── Tabs ──────────────────────────────────────────────────────
 
@@ -1670,10 +1675,26 @@ Scores are computed automatically from title and abstract using keyword matching
             st.markdown("""
 **Goal:** Go through each paper and record your inclusion/exclusion verdict.
 
-Use **sidebar filters** to focus on a subset (AI colour, reviewed/unreviewed). Verdicts save automatically.
+Filter by AI colour or review status below. Verdicts save automatically.
 
 > **Tip:** Start with the 🔴 RED filter to clear obvious exclusions, then work through 🟠 ORANGE.
 """)
+
+        flt1, flt2 = st.columns(2)
+        with flt1:
+            ai_filter = st.selectbox(
+                "AI verdict",
+                ["All", "green", "orange", "red"],
+                index=["All", "green", "orange", "red"].index(st.session_state.filter_verdict),
+            )
+            st.session_state.filter_verdict = ai_filter
+        with flt2:
+            reviewed_filter = st.selectbox(
+                "Review status",
+                ["All", "Unreviewed", "Reviewed"],
+                index=["All", "Unreviewed", "Reviewed"].index(st.session_state.filter_reviewed),
+            )
+            st.session_state.filter_reviewed = reviewed_filter
 
         mask = pd.Series([True] * total, index=pool.index)
         if ai_filter != "All":
