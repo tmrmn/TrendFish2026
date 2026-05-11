@@ -1244,22 +1244,11 @@ with tab_strategy:
         st.markdown("**Strategy 1 — Peer-reviewed literature (OpenAlex)**")
         s1 = strategy.get("strategy1", {})
         with st.form("strat1_form"):
-            st1_purpose  = st.text_area("Purpose", value=s1.get("purpose",""), height=70)
+            st1_purpose = st.text_area("Purpose", value=s1.get("purpose",""), height=70)
             c1, c2 = st.columns(2)
             with c1:
                 st1_db   = st.text_input("Database", value=s1.get("database","OpenAlex"))
                 st1_date = st.text_input("Date conducted", value=s1.get("date",""))
-                st1_retr = st.number_input("Records retrieved",    min_value=0, value=int(s1.get("n_retrieved",0)))
-                st1_dedup= st.number_input("After deduplication",  min_value=0, value=int(s1.get("n_deduped",0)))
-                st1_scr  = st.number_input("Title/abstract screen",min_value=0, value=int(s1.get("n_screened",0)))
-                st1_man  = st.number_input("Manual inclusions",    min_value=0, value=int(s1.get("n_manual",0)))
-            with c2:
-                st.markdown("**Search queries**")
-                q_df = pd.DataFrame({"query": s1.get("queries", [])})
-                new_q = st.data_editor(q_df, num_rows="dynamic", use_container_width=True,
-                                       key="strat1_queries",
-                                       column_config={"query": st.column_config.TextColumn("Query string", width="large")})
-                st.caption("Select checkbox + Delete to remove a row.")
                 st.markdown("**Inclusion criteria**")
                 inc_df = pd.DataFrame({"criterion": s1.get("inclusion_criteria", [])})
                 new_inc = st.data_editor(inc_df, num_rows="dynamic", use_container_width=True, key="strat1_inc",
@@ -1270,6 +1259,13 @@ with tab_strategy:
                 new_exc = st.data_editor(exc_df, num_rows="dynamic", use_container_width=True, key="strat1_exc",
                                          column_config={"criterion": st.column_config.TextColumn("Criterion", width="large")})
                 st.caption("Select checkbox + Delete to remove a row.")
+            with c2:
+                st.markdown("**Search queries**")
+                q_df = pd.DataFrame({"query": s1.get("queries", [])})
+                new_q = st.data_editor(q_df, num_rows="dynamic", use_container_width=True,
+                                       key="strat1_queries",
+                                       column_config={"query": st.column_config.TextColumn("Query string", width="large")})
+                st.caption("Select checkbox + Delete to remove a row.")
 
             if st.form_submit_button("💾 Save Strategy 1", type="primary"):
                 strategy["strategy1"] = {
@@ -1277,10 +1273,6 @@ with tab_strategy:
                     "database":           st1_db,
                     "date":               st1_date,
                     "queries":            [q for q in new_q["query"].dropna().tolist() if q],
-                    "n_retrieved":        int(st1_retr),
-                    "n_deduped":          int(st1_dedup),
-                    "n_screened":         int(st1_scr),
-                    "n_manual":           int(st1_man),
                     "inclusion_criteria": [c for c in new_inc["criterion"].dropna().tolist() if c],
                     "exclusion_criteria": [c for c in new_exc["criterion"].dropna().tolist() if c],
                 }
