@@ -1956,12 +1956,11 @@ with tab_analysis:
         s1o = strategy_o.get("strategy1", {})
 
         st.caption("Strategy 1")
-        s1_cols = st.columns(7)
+        s1_cols = st.columns(6)
         for col, (label, val) in zip(s1_cols, [
             ("Manual inclusions", s1o.get("n_manual",    "?")),
             ("Retrieved",         s1o.get("n_retrieved", "?")),
             ("After dedup",       s1o.get("n_deduped",   "?")),
-            ("Screened",          s1o.get("n_screened",  "?")),
             ("In pool",           total),
             ("Reviewed",          n_reviewed),
             ("Included",          n_include),
