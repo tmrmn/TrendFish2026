@@ -1,0 +1,71 @@
+{
+  "title": "Drivers, Trends, and Signals in Fisheries Research: A Structured Literature Review and Horizon Scan",
+  "subtitle": "",
+  "target_journal": "Reviews in Fish Biology and Fisheries",
+  "max_words": 12000,
+  "authors": [
+    {
+      "name": "xx",
+      "affiliation": "xx",
+      "email": "xx",
+      "orcid": "xx"
+    }
+  ],
+  "keywords": [
+    "horizon scanning",
+    "megatrends",
+    "fisheries futures",
+    "STEEP framework",
+    "systematic literature review",
+    "weak signals",
+    "foresight"
+  ],
+  "research_questions": [
+    "What are the trends, drivers, and signals in future studies and foresight literature identifies as shaping the global environment?",
+    "How do fisheries-specific studies compare to futures studies literature in their STEEP coverage?",
+    "What trends, drivers, and signals warrent systematic attention in fisheries studies?"
+  ],
+  "sections": [
+    {
+      "id": "abstract",
+      "title": "Abstract",
+      "target_words": 300
+    },
+    {
+      "id": "introduction",
+      "title": "1. Introduction",
+      "target_words": 800
+    },
+    {
+      "id": "conceptual_background",
+      "title": "2. Conceptual Background",
+      "target_words": 700
+    },
+    {
+      "id": "methods",
+      "title": "3. Methods",
+      "target_words": 1200
+    },
+    {
+      "id": "results",
+      "title": "4. Results",
+      "target_words": 1200
+    },
+    {
+      "id": "discussion",
+      "title": "5. Discussion",
+      "target_words": 1200
+    },
+    {
+      "id": "conclusions",
+      "title": "6. Conclusions",
+      "target_words": 400
+    },
+    {
+      "id": "references",
+      "title": "References",
+      "target_words": 0,
+      "done": false
+    }
+  ]
+}
