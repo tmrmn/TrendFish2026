@@ -1452,36 +1452,6 @@ with tab_search:
                 save_search_config(cfg)
             st.success("Query saved.")
 
-    with st.expander("💡 Query tips & examples", expanded=False):
-        st.markdown("""
-| Operator | Effect | Example |
-|----------|--------|---------|
-| **AND** | Both must appear — narrows | `fisheries` AND `climate change` |
-| **OR** | Either may appear — broadens | `aquaculture` OR `"fish farming"` |
-| **NOT** | Excludes this term | `fisheries` AND `management` NOT `aquaculture` |
-
-Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
-""")
-
-    saved_queries = cfg.get("saved_queries", [])
-    if saved_queries:
-        st.markdown("---")
-        st.markdown("#### Saved queries")
-        for qi, sq in enumerate(saved_queries):
-            sq_c1, sq_c2, sq_c3 = st.columns([5, 0.5, 0.5])
-            with sq_c1:
-                st.code(sq, language=None)
-            with sq_c2:
-                if st.button("▶", key=f"run_sq_{qi}", help="Run this query"):
-                    st.session_state.pending_run_query = sq
-                    st.rerun()
-            with sq_c3:
-                if st.button("🗑", key=f"del_sq_{qi}", help="Delete"):
-                    cfg["saved_queries"].pop(qi)
-                    st.session_state.search_cfg = cfg
-                    save_search_config(cfg)
-                    st.rerun()
-
     query_to_run = None
     if run_btn and current_query:
         query_to_run = current_query
@@ -1529,6 +1499,36 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
         prev_df.insert(0, "In pool", prev_df["openalex_id"].isin(existing_ids).map({True:"✓",False:"new"}))
         prev_df = prev_df.drop(columns=["openalex_id"])
         st.dataframe(prev_df, use_container_width=True, height=350)
+
+    with st.expander("💡 Query tips & examples", expanded=False):
+        st.markdown("""
+| Operator | Effect | Example |
+|----------|--------|---------|
+| **AND** | Both must appear — narrows | `fisheries` AND `climate change` |
+| **OR** | Either may appear — broadens | `aquaculture` OR `"fish farming"` |
+| **NOT** | Excludes this term | `fisheries` AND `management` NOT `aquaculture` |
+
+Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
+""")
+
+    saved_queries = cfg.get("saved_queries", [])
+    if saved_queries:
+        st.markdown("---")
+        st.markdown("#### Saved queries")
+        for qi, sq in enumerate(saved_queries):
+            sq_c1, sq_c2, sq_c3 = st.columns([5, 0.5, 0.5])
+            with sq_c1:
+                st.code(sq, language=None)
+            with sq_c2:
+                if st.button("▶", key=f"run_sq_{qi}", help="Run this query"):
+                    st.session_state.pending_run_query = sq
+                    st.rerun()
+            with sq_c3:
+                if st.button("🗑", key=f"del_sq_{qi}", help="Delete"):
+                    cfg["saved_queries"].pop(qi)
+                    st.session_state.search_cfg = cfg
+                    save_search_config(cfg)
+                    st.rerun()
 
     st.markdown("---")
     st.markdown("#### Current review pool")
