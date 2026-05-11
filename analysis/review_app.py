@@ -1591,11 +1591,11 @@ with tab_review:
         st.stop()
 
     st.markdown("---")
-    sc_sub = st.radio("sc_view", ["📋 Pool overview", "🤖 AI screening", "📝 Manual screening"],
+    sc_sub = st.radio("sc_view", ["📝 Manual screening", "🤖 AI screening", "⬇️ Download literature"],
                       horizontal=True, label_visibility="collapsed")
 
     # ── Sub-tab 1: Pool overview ───────────────────────────────
-    if sc_sub == "📋 Pool overview":
+    if sc_sub == "⬇️ Download literature":
         if st.checkbox("Show full pool table"):
             show_df = pool[["title","year","journal","search_query",
                             "date_added","kw_verdict","user_verdict"]].copy()
