@@ -1479,13 +1479,8 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
             status.update(label=f"Done — {len(deduped)} unique records found", state="complete")
         st.session_state.search_preview = deduped
 
-    st.markdown("---")
-    st.markdown("#### Results")
-
     preview = st.session_state.search_preview
-    if not preview:
-        st.caption("No results yet — run a search above.")
-    else:
+    if preview:
         existing_ids = set(pool["openalex_id"].tolist())
         n_new = sum(1 for r in preview if r["openalex_id"] not in existing_ids)
         n_dup = len(preview) - n_new
