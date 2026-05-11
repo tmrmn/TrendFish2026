@@ -1203,6 +1203,23 @@ with tab_sections:
             ),
         )
 
+        st.markdown("---")
+        st.markdown("**Full article draft**")
+        _sp_secs = load_sections()
+        _sp_any  = False
+        for sec_def in sec_list:
+            sid    = sec_def["id"]
+            stitle = sec_def["title"]
+            body   = _sp_secs.get(sid, "")
+            if not body.strip():
+                continue
+            _sp_any = True
+            st.markdown(f"### {stitle}")
+            st.markdown(body)
+            st.markdown("---")
+        if not _sp_any:
+            st.caption("No sections have content yet — write drafts in the ✍️ Draft tab.")
+
 
 # ══════════════════════════════════════════════════════════════
 # TAB 3 — STRATEGY
