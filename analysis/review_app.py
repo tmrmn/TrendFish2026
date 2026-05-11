@@ -912,11 +912,8 @@ with st.sidebar:
     _sb_n_dedup  = _sb_s1.get("n_deduped",   "?")
 
     st.markdown("**📥 Identification**")
-    id_c1, id_c2, id_c3 = st.columns(3)
-    with id_c1: st.metric("Retrieved",  _sb_n_ret)
-    with id_c2: st.metric("Manual",     _sb_n_man)
-    with id_c3: st.metric("After dedup",_sb_n_dedup)
-    st.metric("Currently in pool", total)
+    st.markdown(f"Retrieved: **{_sb_n_ret}** · Manual: **{_sb_n_man}** · After dedup: **{_sb_n_dedup}**")
+    st.markdown(f"Currently in pool: **{total}**")
 
     # ── Screening ─────────────────────────────────────────────
     st.markdown("---")
@@ -927,18 +924,20 @@ with st.sidebar:
         st.progress(0.0, text="0 / 0 screened")
 
     _sb_sc_vc = live_verdicts.value_counts() if total else {}
-    sc_c1, sc_c2, sc_c3 = st.columns(3)
-    with sc_c1: st.metric("🟢 Green",  int(_sb_sc_vc.get("green",  0)))
-    with sc_c2: st.metric("🟠 Orange", int(_sb_sc_vc.get("orange", 0)))
-    with sc_c3: st.metric("🔴 Red",    int(_sb_sc_vc.get("red",    0)))
+    st.markdown(
+        f"🟢 Green: **{int(_sb_sc_vc.get('green', 0))}** · "
+        f"🟠 Orange: **{int(_sb_sc_vc.get('orange', 0))}** · "
+        f"🔴 Red: **{int(_sb_sc_vc.get('red', 0))}**"
+    )
 
     _sb_n_inc = int((pool["user_verdict"] == "include").sum()) if total else 0
     _sb_n_exc = int((pool["user_verdict"] == "exclude").sum()) if total else 0
     _sb_n_unr = int((pool["user_verdict"].str.strip() == "").sum()) if total else 0
-    uv_c1, uv_c2, uv_c3 = st.columns(3)
-    with uv_c1: st.metric("✅ Included",   _sb_n_inc)
-    with uv_c2: st.metric("❌ Excluded",   _sb_n_exc)
-    with uv_c3: st.metric("⬜ Unreviewed", _sb_n_unr)
+    st.markdown(
+        f"✅ Included: **{_sb_n_inc}** · "
+        f"❌ Excluded: **{_sb_n_exc}** · "
+        f"⬜ Unreviewed: **{_sb_n_unr}**"
+    )
 
     # ── Writing ───────────────────────────────────────────────
     st.markdown("---")
@@ -952,7 +951,7 @@ with st.sidebar:
         len(_sb_secs.get(f"sectext_{s['id']}", "").split())
         for s in _sb_seclist
     )
-    st.metric("Sections drafted", f"{_sb_n_draft} / {_sb_n_secs}")
+    st.markdown(f"Sections drafted: **{_sb_n_draft} / {_sb_n_secs}**")
     st.progress(min(_sb_total_wc / _sb_max_wc, 1.0),
                 text=f"{_sb_total_wc:,} / {_sb_max_wc:,} words")
 
