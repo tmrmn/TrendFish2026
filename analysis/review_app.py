@@ -960,9 +960,9 @@ Progress saved to `data/` automatically.
 # ── Tabs ──────────────────────────────────────────────────────
 
 (tab_article, tab_sections, tab_strategy,
- tab_search, tab_review, tab_analysis, tab_outputs) = st.tabs([
-    "📋 Article", "✍️ Sections", "🔎 Strategy",
-    "🔍 Search", "📄 Review", "📊 Analysis", "📤 Outputs",
+ tab_search, tab_review, tab_analysis, tab_draft, tab_outputs) = st.tabs([
+    "📋 Article", "📝 Sections", "🔎 Strategy",
+    "🔍 Search", "📄 Review", "📊 Analysis", "✍️ Draft", "📤 Outputs",
 ])
 
 
@@ -1094,7 +1094,8 @@ with tab_article:
 # ══════════════════════════════════════════════════════════════
 
 with tab_sections:
-    st.markdown("<div class='lr-section-header'>✍️ Section Drafts</div>", unsafe_allow_html=True)
+    st.markdown("<div class='lr-section-header'>📝 Section Planner</div>", unsafe_allow_html=True)
+    st.caption("Use this tab to plan each section: add notes, outlines, and instructions that guide the writing. The full text editor is in the ✍️ Draft tab.")
 
     article_s  = load_article_structure()
     sec_list   = article_s.get("sections", [])
@@ -1142,7 +1143,6 @@ with tab_sections:
                     sid_val = str(row.get("id") or "").strip()
                     if not sid_val:
                         continue
-                    # Normalise: lowercase, spaces → underscores
                     sid_val = sid_val.lower().replace(" ", "_")
                     new_sections.append({
                         "id":           sid_val,
@@ -1166,7 +1166,6 @@ with tab_sections:
         sec_ids     = list(sec_options.keys())
         sec_titles  = list(sec_options.values())
 
-        # Keep active section in bounds
         if st.session_state.active_section not in sec_ids:
             st.session_state.active_section = sec_ids[0]
 
@@ -1179,61 +1178,6 @@ with tab_sections:
         sec_id = sec_ids[sec_titles.index(sel_title)]
         st.session_state.active_section = sec_id
 
-        target_words = next((s["target_words"] for s in sec_list if s["id"] == sec_id), 0)
-        sec_key      = f"sectext_{sec_id}"
-
-        # Seed session state from disk on first visit to this section
-        if sec_key not in st.session_state:
-            secs = load_sections()
-            st.session_state[sec_key] = secs.get(sec_id, "")
-
-        current_text = st.session_state[sec_key]
-        wc = len(current_text.split()) if current_text.strip() else 0
-        if target_words > 0:
-            ratio = wc / target_words
-            wc_color = "#28a745" if 0.9 <= ratio <= 1.15 else ("#dc3545" if ratio > 1.15 else "#fd7e14")
-        else:
-            wc_color = "#6c757d"
-
-        st.markdown(
-            f"<span class='lr-badge' style='background:{wc_color}'>"
-            f"{wc:,} / {target_words:,} words</span>",
-            unsafe_allow_html=True,
-        )
-
-        def _autosave_section():
-            text = st.session_state.get(sec_key, "")
-            secs = load_sections()
-            secs[sec_id] = text
-            save_sections(secs)
-
-        st.text_area(
-            sel_title,
-            key=sec_key,
-            height=540,
-            on_change=_autosave_section,
-            label_visibility="collapsed",
-            placeholder="Start writing or paste your draft here…",
-        )
-
-        save_c, reset_c, _ = st.columns([1, 1, 3])
-        with save_c:
-            if st.button("💾 Save section", use_container_width=True, type="primary"):
-                text = st.session_state.get(sec_key, "")
-                secs = load_sections()
-                secs[sec_id] = text
-                save_sections(secs)
-                st.success("Saved.")
-        with reset_c:
-            if st.button("↩ Reset from .docx", use_container_width=True,
-                         help="Re-seed from the corresponding Word document"):
-                fresh = seed_sections_from_docx()
-                st.session_state[sec_key] = fresh.get(sec_id, "")
-                secs = load_sections()
-                secs[sec_id] = st.session_state[sec_key]
-                save_sections(secs)
-                st.rerun()
-
         notes_key = f"secnotes_{sec_id}"
         if notes_key not in st.session_state:
             secs_all = load_sections()
@@ -1245,124 +1189,19 @@ with tab_sections:
             secs[notes_key] = notes
             save_sections(secs)
 
-        with st.expander("✏️ Author notes", expanded=False):
-            st.text_area(
-                "Notes", key=notes_key, height=100,
-                on_change=_autosave_notes,
-                label_visibility="collapsed",
-                placeholder="Reminders, flagged citations, TODOs…",
-            )
-
-        # ── Auto-generate references (only for the references section) ──
-        _REF_IDS = {"references", "literature", "bibliography", "reference_list"}
-        if sec_id in _REF_IDS or any(x in sec_id for x in ("ref", "lit", "bib")):
-            with st.expander("📚 Auto-generate reference list", expanded=False):
-                st.caption(
-                    "Builds a formatted reference list from your review pool and/or megatrend "
-                    "sources. The result is placed in the text area above where you can edit it."
-                )
-                rg1, rg2 = st.columns(2)
-                with rg1:
-                    rg_verdict = st.selectbox(
-                        "Include pool papers",
-                        ["Included only", "Included + Unsure", "None"],
-                        key="rg_verdict_sel",
-                    )
-                with rg2:
-                    rg_mega = st.checkbox("Add megatrend sources (Strategy 2)", value=False,
-                                          key="rg_mega_cb")
-
-                if st.button("⚙️ Generate reference list", type="primary"):
-                    refs = []
-
-                    # Pool papers
-                    if rg_verdict != "None":
-                        _pool = load_pool()
-                        if rg_verdict == "Included only":
-                            _pool = _pool[_pool["user_verdict"] == "include"]
-                        else:
-                            _pool = _pool[_pool["user_verdict"].isin(["include", "unsure"])]
-
-                        for _, row in _pool.iterrows():
-                            authors_raw = str(row.get("authors", "")).strip()
-                            year   = str(row.get("year",    "")).strip()
-                            title  = str(row.get("title",   "")).strip()
-                            journal= str(row.get("journal", "")).strip()
-                            doi    = str(row.get("doi",     "")).strip()
-
-                            # APA-style author formatting
-                            raw_parts = [p.strip().rstrip(".") for p in
-                                         authors_raw.replace(" et al.", "").split(";") if p.strip()]
-                            apa = []
-                            for p in raw_parts:
-                                tokens = p.split()
-                                if len(tokens) >= 2:
-                                    initials = " ".join(t[0].upper() + "." for t in tokens[:-1])
-                                    apa.append(f"{tokens[-1]}, {initials}")
-                                else:
-                                    apa.append(p)
-                            if "et al." in authors_raw and apa:
-                                author_str = apa[0] + " et al."
-                            elif len(apa) > 1:
-                                author_str = ", ".join(apa[:-1]) + ", & " + apa[-1]
-                            else:
-                                author_str = apa[0] if apa else "Unknown"
-
-                            ref = f"{author_str} ({year}). {title}."
-                            if journal:
-                                ref += f" *{journal}*."
-                            if doi:
-                                ref += f" https://doi.org/{doi}"
-                            refs.append(ref)
-
-                    # Megatrend sources
-                    if rg_mega:
-                        excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
-                        mega_refs = load_megatrends(excel_mt)
-                        seen_titles: set = set()
-                        for _, row in mega_refs.iterrows():
-                            author = str(row.get("author", "")).strip()
-                            title  = str(row.get("title",  "")).strip()
-                            source = str(row.get("source", "")).strip()
-                            doi    = str(row.get("doi",    "")).strip()
-                            year_v = row.get("year")
-                            year   = str(int(year_v)) if pd.notna(year_v) else ""
-                            key    = (author, title)
-                            if key in seen_titles or not (author or title):
-                                continue
-                            seen_titles.add(key)
-                            ref = f"{author} ({year}). {title}."
-                            if source:
-                                ref += f" {source}."
-                            if doi:
-                                ref += f" https://doi.org/{doi}"
-                            refs.append(ref)
-
-                    refs.sort(key=str.lower)
-                    ref_text = "\n\n".join(refs)
-                    st.session_state[sec_key] = ref_text
-                    _secs = load_sections()
-                    _secs[sec_id] = ref_text
-                    save_sections(_secs)
-                    st.success(f"Generated {len(refs)} references — edit in the text area above.")
-                    st.rerun()
-
-        st.markdown("---")
-        st.markdown("**Full article draft**")
-        all_secs = load_sections()
-        any_content = False
-        for sec_def in sec_list:
-            sid    = sec_def["id"]
-            stitle = sec_def["title"]
-            body   = st.session_state.get(f"sectext_{sid}", "") if sid == sec_id else all_secs.get(sid, "")
-            if not body.strip():
-                continue
-            any_content = True
-            st.markdown(f"### {stitle}")
-            st.markdown(body)
-            st.markdown("---")
-        if not any_content:
-            st.caption("No sections have content yet.")
+        st.text_area(
+            "Notes / AI input",
+            key=notes_key,
+            height=380,
+            on_change=_autosave_notes,
+            placeholder=(
+                "Write your notes, outline, or instructions for this section here.\n\n"
+                "Example:\n"
+                "- Cover the STEEP framework and its application in foresight\n"
+                "- ~700 words, academic tone\n"
+                "- Cite Sutherland et al. 2011 and Cuhls 2020"
+            ),
+        )
 
 
 # ══════════════════════════════════════════════════════════════
@@ -2355,7 +2194,201 @@ with tab_analysis:
 
 
 # ══════════════════════════════════════════════════════════════
-# TAB 7 — OUTPUTS
+# TAB 7 — DRAFT
+# ══════════════════════════════════════════════════════════════
+
+with tab_draft:
+    st.markdown("<div class='lr-section-header'>✍️ Draft</div>", unsafe_allow_html=True)
+
+    _d_article  = load_article_structure()
+    _d_sec_list = _d_article.get("sections", [])
+
+    if not _d_sec_list:
+        st.info("No sections defined yet — go to the 📝 Sections tab to add them.")
+    else:
+        _d_options = {s["id"]: s["title"] for s in _d_sec_list}
+        _d_ids     = list(_d_options.keys())
+        _d_titles  = list(_d_options.values())
+
+        if st.session_state.active_section not in _d_ids:
+            st.session_state.active_section = _d_ids[0]
+
+        _d_sel_title = st.selectbox(
+            "Section",
+            _d_titles,
+            index=_d_ids.index(st.session_state.active_section),
+            key="draft_section_selector",
+        )
+        sec_id = _d_ids[_d_titles.index(_d_sel_title)]
+        st.session_state.active_section = sec_id
+
+        target_words = next((s["target_words"] for s in _d_sec_list if s["id"] == sec_id), 0)
+        sec_key      = f"sectext_{sec_id}"
+
+        if sec_key not in st.session_state:
+            secs = load_sections()
+            st.session_state[sec_key] = secs.get(sec_id, "")
+
+        current_text = st.session_state[sec_key]
+        wc = len(current_text.split()) if current_text.strip() else 0
+        if target_words > 0:
+            ratio = wc / target_words
+            wc_color = "#28a745" if 0.9 <= ratio <= 1.15 else ("#dc3545" if ratio > 1.15 else "#fd7e14")
+        else:
+            wc_color = "#6c757d"
+
+        st.markdown(
+            f"<span class='lr-badge' style='background:{wc_color}'>"
+            f"{wc:,} / {target_words:,} words</span>",
+            unsafe_allow_html=True,
+        )
+
+        def _autosave_section():
+            text = st.session_state.get(sec_key, "")
+            secs = load_sections()
+            secs[sec_id] = text
+            save_sections(secs)
+
+        st.text_area(
+            _d_sel_title,
+            key=sec_key,
+            height=540,
+            on_change=_autosave_section,
+            label_visibility="collapsed",
+            placeholder="Start writing or paste your draft here…",
+        )
+
+        _dsave_c, _dreset_c, _ = st.columns([1, 1, 3])
+        with _dsave_c:
+            if st.button("💾 Save section", use_container_width=True, type="primary",
+                         key="draft_save_btn"):
+                text = st.session_state.get(sec_key, "")
+                secs = load_sections()
+                secs[sec_id] = text
+                save_sections(secs)
+                st.success("Saved.")
+        with _dreset_c:
+            if st.button("↩ Reset from .docx", use_container_width=True,
+                         help="Re-seed from the corresponding Word document",
+                         key="draft_reset_btn"):
+                fresh = seed_sections_from_docx()
+                st.session_state[sec_key] = fresh.get(sec_id, "")
+                secs = load_sections()
+                secs[sec_id] = st.session_state[sec_key]
+                save_sections(secs)
+                st.rerun()
+
+        # Auto-generate references (references section only)
+        _REF_IDS = {"references", "literature", "bibliography", "reference_list"}
+        if sec_id in _REF_IDS or any(x in sec_id for x in ("ref", "lit", "bib")):
+            with st.expander("📚 Auto-generate reference list", expanded=False):
+                st.caption(
+                    "Builds a formatted reference list from your review pool and/or megatrend "
+                    "sources. The result is placed in the text area above where you can edit it."
+                )
+                _rg1, _rg2 = st.columns(2)
+                with _rg1:
+                    rg_verdict = st.selectbox(
+                        "Include pool papers",
+                        ["Included only", "Included + Unsure", "None"],
+                        key="rg_verdict_sel",
+                    )
+                with _rg2:
+                    rg_mega = st.checkbox("Add megatrend sources (Strategy 2)", value=False,
+                                          key="rg_mega_cb")
+
+                if st.button("⚙️ Generate reference list", type="primary", key="rg_gen_btn"):
+                    refs = []
+
+                    if rg_verdict != "None":
+                        _pool = load_pool()
+                        if rg_verdict == "Included only":
+                            _pool = _pool[_pool["user_verdict"] == "include"]
+                        else:
+                            _pool = _pool[_pool["user_verdict"].isin(["include", "unsure"])]
+
+                        for _, row in _pool.iterrows():
+                            authors_raw = str(row.get("authors", "")).strip()
+                            year   = str(row.get("year",    "")).strip()
+                            title  = str(row.get("title",   "")).strip()
+                            journal= str(row.get("journal", "")).strip()
+                            doi    = str(row.get("doi",     "")).strip()
+
+                            raw_parts = [p.strip().rstrip(".") for p in
+                                         authors_raw.replace(" et al.", "").split(";") if p.strip()]
+                            apa = []
+                            for p in raw_parts:
+                                tokens = p.split()
+                                if len(tokens) >= 2:
+                                    initials = " ".join(t[0].upper() + "." for t in tokens[:-1])
+                                    apa.append(f"{tokens[-1]}, {initials}")
+                                else:
+                                    apa.append(p)
+                            if "et al." in authors_raw and apa:
+                                author_str = apa[0] + " et al."
+                            elif len(apa) > 1:
+                                author_str = ", ".join(apa[:-1]) + ", & " + apa[-1]
+                            else:
+                                author_str = apa[0] if apa else "Unknown"
+
+                            ref = f"{author_str} ({year}). {title}."
+                            if journal:
+                                ref += f" *{journal}*."
+                            if doi:
+                                ref += f" https://doi.org/{doi}"
+                            refs.append(ref)
+
+                    if rg_mega:
+                        excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+                        mega_refs = load_megatrends(excel_mt)
+                        seen_titles: set = set()
+                        for _, row in mega_refs.iterrows():
+                            author = str(row.get("author", "")).strip()
+                            title  = str(row.get("title",  "")).strip()
+                            source = str(row.get("source", "")).strip()
+                            doi    = str(row.get("doi",    "")).strip()
+                            year_v = row.get("year")
+                            year   = str(int(year_v)) if pd.notna(year_v) else ""
+                            _key   = (author, title)
+                            if _key in seen_titles or not (author or title):
+                                continue
+                            seen_titles.add(_key)
+                            ref = f"{author} ({year}). {title}."
+                            if source:
+                                ref += f" {source}."
+                            if doi:
+                                ref += f" https://doi.org/{doi}"
+                            refs.append(ref)
+
+                    refs.sort(key=str.lower)
+                    ref_text = "\n\n".join(refs)
+                    st.session_state[sec_key] = ref_text
+                    _secs = load_sections()
+                    _secs[sec_id] = ref_text
+                    save_sections(_secs)
+                    st.success(f"Generated {len(refs)} references — edit in the text area above.")
+                    st.rerun()
+
+        st.markdown("---")
+        st.markdown("**Full article draft**")
+        _all_secs = load_sections()
+        _any_content = False
+        for sec_def in _d_sec_list:
+            sid    = sec_def["id"]
+            stitle = sec_def["title"]
+            body   = st.session_state.get(f"sectext_{sid}", "") if sid == sec_id else _all_secs.get(sid, "")
+            if not body.strip():
+                continue
+            _any_content = True
+            st.markdown(f"### {stitle}")
+            st.markdown(body)
+            st.markdown("---")
+        if not _any_content:
+            st.caption("No sections have content yet.")
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 8 — OUTPUTS
 # ══════════════════════════════════════════════════════════════
 
 with tab_outputs:
