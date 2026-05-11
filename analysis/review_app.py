@@ -971,7 +971,7 @@ Progress saved to `data/` automatically.
 # ══════════════════════════════════════════════════════════════
 
 with tab_article:
-    st.markdown("<div class='lr-section-header'>📋 Article Structure</div>", unsafe_allow_html=True)
+    st.markdown("<div class='lr-section-header'>📋 Article Planner</div>", unsafe_allow_html=True)
 
     article = load_article_structure()
 
