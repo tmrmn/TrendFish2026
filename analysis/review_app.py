@@ -1505,17 +1505,6 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
         prev_df = prev_df.drop(columns=["openalex_id"])
         st.dataframe(prev_df, use_container_width=True, height=350)
 
-    with st.expander("💡 Query tips & examples", expanded=False):
-        st.markdown("""
-| Operator | Effect | Example |
-|----------|--------|---------|
-| **AND** | Both must appear — narrows | `fisheries` AND `climate change` |
-| **OR** | Either may appear — broadens | `aquaculture` OR `"fish farming"` |
-| **NOT** | Excludes this term | `fisheries` AND `management` NOT `aquaculture` |
-
-Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
-""")
-
     saved_queries = cfg.get("saved_queries", [])
     if saved_queries:
         st.markdown("---")
