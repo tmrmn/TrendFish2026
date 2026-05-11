@@ -1083,8 +1083,64 @@ with tab_sections:
     article_s  = load_article_structure()
     sec_list   = article_s.get("sections", [])
 
+    # ── Inline section manager ─────────────────────────────────
+    with st.expander("⚙️ Manage sections — add, remove, reorder", expanded=(not sec_list)):
+        sections_data_mgr = load_sections()
+        mgr_rows = []
+        for s in sec_list:
+            text = sections_data_mgr.get(s["id"], "")
+            mgr_rows.append({
+                "id":           s["id"],
+                "title":        s["title"],
+                "target_words": s["target_words"],
+                "words_written": len(text.split()) if text.strip() else 0,
+            })
+        mgr_df = pd.DataFrame(
+            mgr_rows if mgr_rows else
+            [{"id": "", "title": "", "target_words": 0, "words_written": 0}]
+        )
+        with st.form("sections_manager_form"):
+            edited_mgr = st.data_editor(
+                mgr_df,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="sections_mgr_de",
+                column_config={
+                    "id":           st.column_config.TextColumn(
+                        "Section ID",
+                        help="Unique key used as filename, e.g. 'introduction'. Lowercase, no spaces.",
+                        width="medium",
+                    ),
+                    "title":        st.column_config.TextColumn("Display title", width="large"),
+                    "target_words": st.column_config.NumberColumn("Target words", format="%d", width="small"),
+                    "words_written":st.column_config.NumberColumn("Written", format="%d", width="small"),
+                },
+                disabled=["words_written"],
+            )
+            if st.form_submit_button("💾 Save sections", type="primary"):
+                new_sections = []
+                for _, row in edited_mgr.iterrows():
+                    sid_val = str(row.get("id") or "").strip()
+                    if not sid_val:
+                        continue
+                    # Normalise: lowercase, spaces → underscores
+                    sid_val = sid_val.lower().replace(" ", "_")
+                    new_sections.append({
+                        "id":           sid_val,
+                        "title":        str(row.get("title") or "").strip(),
+                        "target_words": int(row.get("target_words") or 0),
+                    })
+                article_s["sections"] = new_sections
+                save_article_structure(article_s)
+                st.success(f"Saved {len(new_sections)} sections.")
+                st.rerun()
+
+    # Reload after any save
+    article_s = load_article_structure()
+    sec_list  = article_s.get("sections", [])
+
     if not sec_list:
-        st.info("No sections defined. Go to 📋 Article → Section Outline to define them.")
+        st.info("No sections yet — use the manager above to add them.")
     else:
         sec_options = {s["id"]: s["title"] for s in sec_list}
         sec_ids     = list(sec_options.keys())
