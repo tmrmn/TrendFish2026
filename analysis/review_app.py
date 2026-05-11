@@ -962,7 +962,7 @@ Progress saved to `data/` automatically.
 (tab_article, tab_sections, tab_strategy,
  tab_search, tab_review, tab_analysis, tab_draft, tab_outputs) = st.tabs([
     "📋 Article", "📝 Sections", "🔎 Search Strategy",
-    "🔍 Search", "📄 Review", "📊 Analysis", "✍️ Draft", "📤 Outputs",
+    "🔍 Search", "📄 Screening", "📊 Analysis", "✍️ Draft", "📤 Outputs",
 ])
 
 
@@ -1635,7 +1635,7 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
 # ══════════════════════════════════════════════════════════════
 
 with tab_review:
-    st.markdown("<div class='lr-section-header'>📄 Paper Review</div>", unsafe_allow_html=True)
+    st.markdown("<div class='lr-section-header'>📄 Screening</div>", unsafe_allow_html=True)
 
     with st.expander("ℹ️ How the Review tab works", expanded=False):
         st.markdown("""
