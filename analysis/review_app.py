@@ -1574,9 +1574,9 @@ with tab_review:
 
     ai_mc = st.columns(4)
     with ai_mc[0]: st.metric("Total papers",    total)
-    with ai_mc[1]: st.metric("🟢 AI Included",  int(_sc_vc.get("green",  0)))
-    with ai_mc[2]: st.metric("🟠 AI Unsure",    int(_sc_vc.get("orange", 0)))
-    with ai_mc[3]: st.metric("🔴 AI Excluded",  int(_sc_vc.get("red",    0)))
+    with ai_mc[1]: st.metric("🟢 AI Green",  int(_sc_vc.get("green",  0)))
+    with ai_mc[2]: st.metric("🟠 AI Orange", int(_sc_vc.get("orange", 0)))
+    with ai_mc[3]: st.metric("🔴 AI Red",    int(_sc_vc.get("red",    0)))
 
     uv_mc = st.columns(4)
     with uv_mc[0]: st.metric("⬜ Unreviewed",       _n_unreviewed)
