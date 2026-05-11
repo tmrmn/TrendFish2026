@@ -1,22 +1,25 @@
 """
-TrendFish 2026 — unified search + review Streamlit app.
+TrendFish 2026 — unified literature review management app.
 
 Tabs:
-  🔍 Search   — query OpenAlex, fetch abstracts, add to review pool
-  📄 Review   — paper-by-paper review with live keyword scoring
-  ⚙️  Keywords — configure keyword lists
-
-All progress is saved automatically to data/full_text_review.csv.
-Search settings persist in data/search_config.json.
-Keywords persist in data/review_keywords.json.
+  📋 Article   — article structure, metadata, section outline
+  ✍️ Sections  — write and edit section drafts with live word counts
+  🔎 Strategy  — document the 3-step search strategy
+  🔍 Search    — query OpenAlex, build boolean searches, manage pool
+  📄 Review    — paper-by-paper screening with keyword scoring
+  📊 Analysis  — STEEP gap, megatrends, signals, keywords
+  📤 Outputs   — generate manuscript, export data
 
 Usage:
     python -m streamlit run analysis/review_app.py
 """
 
 import json
+import subprocess
+import sys
 import time
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import openpyxl
@@ -25,15 +28,20 @@ import plotly.express as px
 import requests
 import streamlit as st
 
-BASE      = Path(__file__).parent.parent
-DATA_DIR  = BASE / "data"
-IN_CSV    = DATA_DIR / "full_text_review.csv"
-KW_FILE   = DATA_DIR / "review_keywords.json"
-SRCH_FILE = DATA_DIR / "search_config.json"
-EXCEL_FILE   = BASE / "data" / "manual_literature_search.xlsx"
-SIGNALS_FILE = DATA_DIR / "signals.json"
+BASE          = Path(__file__).parent.parent
+DATA_DIR      = BASE / "data"
+DOCS_DIR      = BASE / "docs"
+IN_CSV        = DATA_DIR / "full_text_review.csv"
+KW_FILE       = DATA_DIR / "review_keywords.json"
+SRCH_FILE     = DATA_DIR / "search_config.json"
+EXCEL_FILE    = DATA_DIR / "manual_literature_search.xlsx"
+SIGNALS_FILE  = DATA_DIR / "signals.json"
+ARTICLE_FILE  = DATA_DIR / "article_structure.json"
+SECTIONS_FILE = DATA_DIR / "sections.json"
+STRATEGY_FILE = DATA_DIR / "search_strategy.json"
 
 DATA_DIR.mkdir(exist_ok=True)
+DOCS_DIR.mkdir(exist_ok=True)
 
 STEEP_CATS   = ["Environmental", "Technological", "Economic", "Social", "Political", "Other"]
 STEEP_COLORS = {
@@ -71,8 +79,6 @@ STEEP_RULES = {
         "policy","democracy","conflict","management","quota","treaty","iuu","compliance",
     ],
 }
-
-# ── Default keyword lists ─────────────────────────────────────
 
 DEFAULT_KW = {
     "fish_strong": [
@@ -143,18 +149,15 @@ KEYWORD_META = {
 }
 
 VERDICT_COLORS = {"green": "#28a745", "orange": "#fd7e14", "red": "#dc3545"}
-
 VERDICTS = {
     "include": ("🟢", "INCLUDE", "#d4edda", VERDICT_COLORS["green"]),
     "unsure":  ("🟠", "UNSURE",  "#fff3cd", VERDICT_COLORS["orange"]),
     "exclude": ("🔴", "EXCLUDE", "#f8d7da", VERDICT_COLORS["red"]),
 }
-
 OA_STATUS = {
     "true":  ("🔓", "Open access", "#28a745"),
     "false": ("🔒", "Subscription", "#6c757d"),
 }
-
 POOL_COLS = [
     "openalex_id", "title", "year", "authors", "journal", "doi",
     "abstract", "abstract_source", "search_query", "date_added",
@@ -162,8 +165,91 @@ POOL_COLS = [
     "pdf_url", "is_oa",
 ]
 
+DEFAULT_ARTICLE = {
+    "title": "Drivers, Trends, and Signals in Fisheries Research: A Structured Literature Review and Horizon Scan",
+    "subtitle": "",
+    "target_journal": "Reviews in Fish Biology and Fisheries",
+    "max_words": 12000,
+    "authors": [
+        {
+            "name": "Timo Szczepanska",
+            "affiliation": "Norwegian College of Fishery Science, UiT The Arctic University of Norway",
+            "email": "tsz000@uit.no",
+            "orcid": "0000-0003-2442-8223",
+        }
+    ],
+    "keywords": [
+        "horizon scanning", "megatrends", "fisheries futures",
+        "STEEP framework", "systematic literature review", "weak signals", "foresight",
+    ],
+    "research_questions": [
+        "What are the dominant drivers and megatrends that cross-sectoral foresight literature identifies as shaping the global environment?",
+        "How do fisheries-specific futures studies compare to the cross-sectoral literature in their STEEP coverage?",
+        "What weak and emerging signals at the margins of current fisheries knowledge warrant systematic attention?",
+    ],
+    "sections": [
+        {"id": "abstract",              "title": "Abstract",                "target_words": 300},
+        {"id": "introduction",          "title": "1. Introduction",         "target_words": 800},
+        {"id": "conceptual_background", "title": "2. Conceptual Background","target_words": 700},
+        {"id": "methods",               "title": "3. Methods",              "target_words": 1200},
+        {"id": "results",               "title": "4. Results",              "target_words": 1200},
+        {"id": "discussion",            "title": "5. Discussion",           "target_words": 1200},
+        {"id": "conclusions",           "title": "6. Conclusions",          "target_words": 400},
+    ],
+}
+
+SECTION_DOCX_MAP = {
+    "abstract":              "Abstract_Trends_2026.docx",
+    "introduction":          "Introduction_Trends_2026.docx",
+    "conceptual_background": "ConceptualBackground_Trends_2026.docx",
+    "methods":               "Methods_Trends_2026.docx",
+    "results":               "Results_Trends_2026.docx",
+    "discussion":            "Discussion_Trends_2026.docx",
+    "conclusions":           "Conclusions_Trends_2026.docx",
+}
+
+DEFAULT_STRATEGY = {
+    "strategy1": {
+        "purpose": "Structured search of peer-reviewed fisheries futures literature",
+        "database": "OpenAlex",
+        "date": "August 2024",
+        "queries": list(DEFAULT_QUERIES),
+        "n_retrieved": 2100,
+        "n_deduped": 1621,
+        "n_screened": 720,
+        "n_manual": 60,
+        "inclusion_criteria": [
+            "Published in peer-reviewed journal",
+            "Addresses the future of fisheries (forward-looking)",
+            "Published 2000–2024",
+        ],
+        "exclusion_criteria": [
+            "Purely retrospective — no future orientation",
+            "No fisheries relevance detected",
+            "Non-fisheries topic (agriculture, livestock, etc.)",
+        ],
+    },
+    "strategy2": {
+        "purpose": "Cross-sectoral scan of megatrend and foresight publications",
+        "sources": [
+            "Consultancy reports (McKinsey, Deloitte, PwC, KPMG)",
+            "Government foresight agencies (OECD, EU, national bodies)",
+            "Academic megatrend and foresight reviews",
+            "NGO and think tank publications",
+        ],
+        "date": "10–12 August 2024",
+        "n_entries": 145,
+    },
+    "strategy3": {
+        "purpose": "Horizon scan for weak and emerging signals",
+        "method": "Continuous monitoring of news, policy, and grey literature for early indicators of change in fisheries systems",
+        "status": "Living document",
+    },
+}
+
+
 # ─────────────────────────────────────────────────────────────
-# Helpers
+# Helpers — keywords, search config, scoring
 # ─────────────────────────────────────────────────────────────
 
 def load_keywords() -> dict:
@@ -183,13 +269,12 @@ def load_search_config() -> dict:
     if SRCH_FILE.exists():
         try:
             data = json.loads(SRCH_FILE.read_text(encoding="utf-8"))
-            # Migrate old "queries" list to "saved_queries"
             if "queries" in data and "saved_queries" not in data:
                 data["saved_queries"] = data.pop("queries")
             return data
         except Exception:
             pass
-    return {"saved_queries": DEFAULT_QUERIES, "max_results": 200, "email": "tsz000@uit.no"}
+    return {"saved_queries": list(DEFAULT_QUERIES), "max_results": 200, "email": "tsz000@uit.no"}
 
 
 def save_search_config(cfg: dict):
@@ -246,12 +331,8 @@ def score_paper(title: str, abstract: str, kw: dict) -> dict:
     }
 
 
-# ── Query builder ─────────────────────────────────────────────
-
-def build_query_from_rows(rows: list[dict]) -> str:
-    """Build an OpenAlex boolean query from builder rows.
-    Multi-word terms are auto-quoted; operators are AND / OR / NOT (uppercase)."""
-    parts: list[str] = []
+def build_query_from_rows(rows: list) -> str:
+    parts: list = []
     for i, row in enumerate(rows):
         term = (row.get("term") or "").strip()
         if not term:
@@ -264,7 +345,9 @@ def build_query_from_rows(rows: list[dict]) -> str:
     return " ".join(parts)
 
 
-# ── OpenAlex ──────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Helpers — OpenAlex
+# ─────────────────────────────────────────────────────────────
 
 def reconstruct_abstract(inv: dict) -> str:
     pairs = [(pos, word) for word, positions in inv.items() for pos in positions]
@@ -306,9 +389,7 @@ def _parse_work(w: dict, query: str) -> dict:
     }
 
 
-def fetch_openalex(query: str, max_results: int, email: str,
-                   log_fn=None) -> list[dict]:
-    """Return up to max_results parsed records for a single query string."""
+def fetch_openalex(query: str, max_results: int, email: str, log_fn=None) -> list:
     collected = []
     per_page  = min(200, max_results)
     page      = 1
@@ -327,27 +408,26 @@ def fetch_openalex(query: str, max_results: int, email: str,
                 timeout=20,
             )
             if r.status_code != 200:
-                if log_fn:
-                    log_fn(f"  HTTP {r.status_code} — stopping pagination")
+                if log_fn: log_fn(f"  HTTP {r.status_code} — stopping pagination")
                 break
             batch = r.json().get("results", [])
             if not batch:
                 break
             collected.extend(batch)
-            if log_fn:
-                log_fn(f"  Page {page}: {len(batch)} records (total {len(collected)})")
+            if log_fn: log_fn(f"  Page {page}: {len(batch)} records (total {len(collected)})")
             if len(batch) < per_page:
                 break
             page += 1
             time.sleep(0.12)
         except Exception as exc:
-            if log_fn:
-                log_fn(f"  Request error: {exc}")
+            if log_fn: log_fn(f"  Request error: {exc}")
             break
     return [_parse_work(w, query) for w in collected[:max_results]]
 
 
-# ── Pool (CSV) helpers ────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Helpers — pool (CSV)
+# ─────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=30)
 def load_pool() -> pd.DataFrame:
@@ -372,12 +452,11 @@ def save_verdict_to_pool(df: pd.DataFrame, idx: int, verdict: str, notes: str):
     save_pool(df)
 
 
-def merge_records(new_records: list[dict], kw: dict) -> tuple[int, int]:
-    """Merge new records into CSV. Returns (n_added, n_duplicate)."""
+def merge_records(new_records: list, kw: dict) -> tuple:
     pool = load_pool()
     existing = set(pool["openalex_id"].tolist())
     to_add, n_dup = [], 0
-    seen_now: set[str] = set()
+    seen_now: set = set()
     for rec in new_records:
         oid = rec["openalex_id"]
         if oid in existing or oid in seen_now:
@@ -399,23 +478,16 @@ def _bibtex_escape(s: str) -> str:
     return s.replace("\\", "").replace("{", "").replace("}", "").replace('"', "'")
 
 
-def _bibtex_key(row: pd.Series, seen: set[str] | None = None) -> str:
-    """Generate a unique citekey: firstauthorlastname_year_firsttitleword.
-    Pass seen to guarantee uniqueness across a batch by appending a numeric suffix."""
+def _bibtex_key(row: pd.Series, seen=None) -> str:
     authors = str(row.get("authors", "")).strip()
     year    = str(row.get("year", "")).strip()
     title   = str(row.get("title", "")).strip()
-
-    # BibTeX convention: use only the primary author for the citekey
     first_author = authors.split(";")[0].strip()
     last_name = first_author.split()[-1] if first_author else "unknown"
     last_name = "".join(c for c in last_name.lower() if c.isalpha())
-
-    # Skip articles/prepositions so citekey is meaningful (e.g. "fisheries_2023_future" not "a_2020_a")
     skip = {"a", "an", "the", "of", "in", "on", "for", "and", "or"}
     words = [w for w in title.lower().split() if w.isalpha() and w not in skip]
     first_word = words[0] if words else "notitle"
-
     base = f"{last_name}_{year}_{first_word}"
     if seen is None:
         return base
@@ -434,8 +506,6 @@ def _make_bibtex_entry(row: pd.Series, key: str) -> str:
     doi     = str(row.get("doi",     "")).strip()
     pdf_url = str(row.get("pdf_url", "")).strip()
     oa_id   = str(row.get("openalex_id", "")).strip()
-
-    # Convert "First Last; First Last et al." → "Last, First and Last, First"
     parts = [p.strip().rstrip(".") for p in authors_raw.replace(" et al.", "").split(";") if p.strip()]
     bib_authors = []
     for p in parts:
@@ -445,23 +515,20 @@ def _make_bibtex_entry(row: pd.Series, key: str) -> str:
         else:
             bib_authors.append(p)
     author_str = " and ".join(bib_authors)
-
     url = f"https://doi.org/{doi}" if doi else pdf_url or oa_id
-
     lines = [f"@article{{{key},"]
-    if title:   lines.append(f"  title   = {{{title}}},")
+    if title:      lines.append(f"  title   = {{{title}}},")
     if author_str: lines.append(f"  author  = {{{author_str}}},")
-    if year:    lines.append(f"  year    = {{{year}}},")
-    if journal: lines.append(f"  journal = {{{journal}}},")
-    if doi:     lines.append(f"  doi     = {{{doi}}},")
-    if url:     lines.append(f"  url     = {{{url}}},")
+    if year:       lines.append(f"  year    = {{{year}}},")
+    if journal:    lines.append(f"  journal = {{{journal}}},")
+    if doi:        lines.append(f"  doi     = {{{doi}}},")
+    if url:        lines.append(f"  url     = {{{url}}},")
     lines.append("}")
     return "\n".join(lines)
 
 
 def generate_bibtex(df: pd.DataFrame) -> str:
-    """Convert a filtered DataFrame to a BibTeX string."""
-    seen: set[str] = set()
+    seen: set = set()
     entries = []
     for _, row in df.iterrows():
         key = _bibtex_key(row, seen)
@@ -471,8 +538,7 @@ def generate_bibtex(df: pd.DataFrame) -> str:
 
 
 @st.cache_data
-def compute_live_verdicts(pool_mtime: float, kw_json: str) -> list[str]:
-    """Score all papers in the pool. Cached by CSV mtime + keyword state."""
+def compute_live_verdicts(pool_mtime: float, kw_json: str) -> list:
     _pool = load_pool()
     _kw   = json.loads(kw_json)
     return [score_paper(r["title"], r["abstract"], _kw)["verdict"] for _, r in _pool.iterrows()]
@@ -480,7 +546,6 @@ def compute_live_verdicts(pool_mtime: float, kw_json: str) -> list[str]:
 
 @st.cache_data
 def _cached_bibtex(bib_filter: str, pool_mtime: float) -> bytes:
-    """Generate BibTeX for a verdict filter. Cached by filter + CSV mtime."""
     _pool = load_pool()
     masks = {
         "Included papers":   _pool["user_verdict"] == "include",
@@ -491,9 +556,7 @@ def _cached_bibtex(bib_filter: str, pool_mtime: float) -> bytes:
     return generate_bibtex(_pool[masks[bib_filter]]).encode("utf-8")
 
 
-def enrich_unpaywall(email: str, log_fn=None) -> tuple[int, int]:
-    """Query Unpaywall for every paper with a DOI but no pdf_url yet.
-    Returns (n_found_pdf, n_checked)."""
+def enrich_unpaywall(email: str, log_fn=None) -> tuple:
     pool = load_pool()
     needs = pool[
         (pool["doi"].str.strip() != "") &
@@ -502,8 +565,7 @@ def enrich_unpaywall(email: str, log_fn=None) -> tuple[int, int]:
     n_found = 0
     for i, (idx, row) in enumerate(needs.iterrows()):
         doi = row["doi"].strip()
-        if log_fn:
-            log_fn(f"[{i+1}/{len(needs)}] {doi}")
+        if log_fn: log_fn(f"[{i+1}/{len(needs)}] {doi}")
         try:
             r = requests.get(
                 f"https://api.unpaywall.org/v2/{doi}",
@@ -516,8 +578,7 @@ def enrich_unpaywall(email: str, log_fn=None) -> tuple[int, int]:
                 url  = loc.get("url_for_pdf") or loc.get("url") or ""
                 pool.loc[idx, "pdf_url"] = url
                 pool.loc[idx, "is_oa"]   = str(data.get("is_oa", "")).lower()
-                if url:
-                    n_found += 1
+                if url: n_found += 1
         except Exception:
             pass
         time.sleep(0.12)
@@ -525,7 +586,9 @@ def enrich_unpaywall(email: str, log_fn=None) -> tuple[int, int]:
     return n_found, len(needs)
 
 
-# ── STEEP helpers ────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Helpers — STEEP + Excel
+# ─────────────────────────────────────────────────────────────
 
 def classify_steep(text: str) -> str:
     if not text or str(text).strip().lower() in ("none", "nan", "?", ""):
@@ -581,7 +644,7 @@ def load_fisheries_futures(_mtime: float = 0) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-def load_signals() -> list[dict]:
+def load_signals() -> list:
     if SIGNALS_FILE.exists():
         try:
             return json.loads(SIGNALS_FILE.read_text(encoding="utf-8"))
@@ -590,7 +653,7 @@ def load_signals() -> list[dict]:
     return []
 
 
-def save_signals(signals: list[dict]):
+def save_signals(signals: list):
     SIGNALS_FILE.write_text(json.dumps(signals, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
@@ -608,6 +671,148 @@ def add_megatrend_to_excel(row: dict):
 
 
 # ─────────────────────────────────────────────────────────────
+# Helpers — article, sections, strategy
+# ─────────────────────────────────────────────────────────────
+
+def load_article_structure() -> dict:
+    if ARTICLE_FILE.exists():
+        try:
+            return json.loads(ARTICLE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return json.loads(json.dumps(DEFAULT_ARTICLE))
+
+
+def save_article_structure(d: dict):
+    ARTICLE_FILE.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def seed_sections_from_docx() -> dict:
+    try:
+        from docx import Document as _DocxDoc
+    except ImportError:
+        return {sid: "" for sid in SECTION_DOCX_MAP}
+    result = {}
+    heading_prefixes = ("Abstract", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.")
+    for sec_id, fname in SECTION_DOCX_MAP.items():
+        fpath = DOCS_DIR / fname
+        if fpath.exists():
+            try:
+                d = _DocxDoc(str(fpath))
+                paras = [p.text for p in d.paragraphs if p.text.strip()]
+                # Drop the first paragraph if it's a section heading
+                if paras and any(paras[0].startswith(px) for px in heading_prefixes):
+                    paras = paras[1:]
+                result[sec_id] = "\n\n".join(paras)
+            except Exception:
+                result[sec_id] = ""
+        else:
+            result[sec_id] = ""
+    return result
+
+
+def load_sections() -> dict:
+    if SECTIONS_FILE.exists():
+        try:
+            return json.loads(SECTIONS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    seeded = seed_sections_from_docx()
+    save_sections(seeded)
+    return seeded
+
+
+def save_sections(d: dict):
+    SECTIONS_FILE.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def load_search_strategy() -> dict:
+    if STRATEGY_FILE.exists():
+        try:
+            return json.loads(STRATEGY_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return json.loads(json.dumps(DEFAULT_STRATEGY))
+
+
+def save_search_strategy(d: dict):
+    STRATEGY_FILE.write_text(json.dumps(d, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def generate_manuscript_bytes(article: dict, sections: dict) -> bytes:
+    try:
+        from docx import Document as _DocxDoc
+        from docx.shared import Pt, Cm
+        from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+    except ImportError:
+        return b""
+
+    doc = _DocxDoc()
+    for sec in doc.sections:
+        sec.top_margin    = Cm(2.5)
+        sec.bottom_margin = Cm(2.5)
+        sec.left_margin   = Cm(3)
+        sec.right_margin  = Cm(3)
+
+    # Title page
+    p = doc.add_paragraph()
+    r = p.add_run(article.get("title", ""))
+    r.bold = True; r.font.name = "Times New Roman"; r.font.size = Pt(14)
+    p.paragraph_format.space_after = Pt(18)
+
+    for author in article.get("authors", []):
+        p = doc.add_paragraph()
+        parts = [author.get("name",""), author.get("affiliation",""), author.get("email","")]
+        if author.get("orcid"):
+            parts.append(f"ORCID: {author['orcid']}")
+        r = p.add_run("\n".join(x for x in parts if x))
+        r.font.name = "Times New Roman"; r.font.size = Pt(11)
+        p.paragraph_format.space_after = Pt(6)
+
+    journal = article.get("target_journal", "")
+    if journal:
+        p = doc.add_paragraph()
+        r = p.add_run(f"Target journal: {journal}")
+        r.italic = True; r.font.name = "Times New Roman"; r.font.size = Pt(10)
+        p.paragraph_format.space_after = Pt(12)
+
+    kws = article.get("keywords", [])
+    if kws:
+        p = doc.add_paragraph()
+        r = p.add_run(f"Keywords: {'; '.join(kws)}")
+        r.font.name = "Times New Roman"; r.font.size = Pt(10)
+
+    p = doc.add_paragraph()
+    p.add_run().add_break(WD_BREAK.PAGE)
+
+    for sec_def in article.get("sections", []):
+        sec_id    = sec_def["id"]
+        sec_title = sec_def["title"]
+        text      = sections.get(sec_id, "").strip()
+        if not text:
+            continue
+        p = doc.add_paragraph()
+        r = p.add_run(sec_title)
+        r.bold = True; r.font.name = "Times New Roman"; r.font.size = Pt(12)
+        p.paragraph_format.space_before = Pt(16)
+        p.paragraph_format.space_after  = Pt(6)
+        for block in text.split("\n\n"):
+            block = block.strip()
+            if not block:
+                continue
+            p = doc.add_paragraph(block)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            for run in p.runs:
+                run.font.name = "Times New Roman"; run.font.size = Pt(11)
+            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.first_line_indent = Cm(0.75)
+
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+# ─────────────────────────────────────────────────────────────
 # App layout
 # ─────────────────────────────────────────────────────────────
 
@@ -620,6 +825,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+/* Legacy styles */
 .abstract-box {
     background:#f8f9fa; border-left:4px solid #dee2e6;
     padding:12px 16px; border-radius:4px;
@@ -629,30 +835,43 @@ st.markdown("""
 .score-bar-wrap { background:#e9ecef; border-radius:6px; height:14px; margin:2px 0 6px 0; }
 .score-bar      { border-radius:6px; height:14px; }
 .kw-match       { font-size:0.78rem; color:#555; margin:2px 0; }
+
+/* Design system */
+.lr-card {
+    background:#fff; border:1px solid #dee2e6; border-radius:8px;
+    padding:16px 20px; margin-bottom:12px;
+}
+.lr-section-header {
+    font-size:1.05rem; font-weight:700; color:#212529;
+    border-bottom:2px solid #0d6efd; padding-bottom:4px; margin-bottom:12px;
+}
+.lr-badge {
+    display:inline-block; padding:2px 10px; border-radius:12px;
+    font-size:0.78rem; font-weight:600; color:#fff;
+}
+.lr-metric { text-align:center; padding:10px; }
+.lr-metric-val { font-size:1.8rem; font-weight:700; }
+.lr-metric-lbl { font-size:0.78rem; color:#6c757d; }
+.lr-progress-wrap { background:#e9ecef; border-radius:4px; height:10px; }
+.lr-progress-bar  { background:#0d6efd; border-radius:4px; height:10px; }
 </style>
 """, unsafe_allow_html=True)
 
+
 # ── Session state ─────────────────────────────────────────────
 
-if "paper_idx"        not in st.session_state:
-    st.session_state.paper_idx        = 0
-if "filter_verdict"   not in st.session_state:
-    st.session_state.filter_verdict   = "All"
-if "filter_reviewed"  not in st.session_state:
-    st.session_state.filter_reviewed  = "All"
-if "kw"               not in st.session_state:
-    st.session_state.kw               = load_keywords()
-if "search_cfg"       not in st.session_state:
-    st.session_state.search_cfg       = load_search_config()
-if "search_preview"   not in st.session_state:
-    st.session_state.search_preview   = []
+if "paper_idx"        not in st.session_state: st.session_state.paper_idx        = 0
+if "filter_verdict"   not in st.session_state: st.session_state.filter_verdict   = "All"
+if "filter_reviewed"  not in st.session_state: st.session_state.filter_reviewed  = "All"
+if "kw"               not in st.session_state: st.session_state.kw               = load_keywords()
+if "search_cfg"       not in st.session_state: st.session_state.search_cfg       = load_search_config()
+if "search_preview"   not in st.session_state: st.session_state.search_preview   = []
 if "search_rows"      not in st.session_state:
-    st.session_state.search_rows      = [{"id": 0, "op": None, "term": ""}]
-    st.session_state.search_next_id   = 1
-if "signals"          not in st.session_state:
-    st.session_state.signals          = load_signals()
-if "editing_signal"   not in st.session_state:
-    st.session_state.editing_signal   = None
+    st.session_state.search_rows    = [{"id": 0, "op": None, "term": ""}]
+    st.session_state.search_next_id = 1
+if "signals"          not in st.session_state: st.session_state.signals          = load_signals()
+if "editing_signal"   not in st.session_state: st.session_state.editing_signal   = None
+if "active_section"   not in st.session_state: st.session_state.active_section   = "abstract"
 
 kw  = st.session_state.kw
 cfg = st.session_state.search_cfg
@@ -678,27 +897,17 @@ with st.sidebar:
 
     with st.expander("❓ Quick start", expanded=False):
         st.markdown("""
-**Three tabs — use in order:**
+**Seven tabs — use in order:**
 
-1. **🔍 Search** — enter search terms,
-   fetch papers from OpenAlex, add
-   them to your review pool.
+1. **📋 Article** — define article structure and metadata
+2. **✍️ Sections** — write and edit section drafts
+3. **🔎 Strategy** — document your search strategy
+4. **🔍 Search** — fetch papers from OpenAlex
+5. **📄 Review** — screen papers one by one
+6. **📊 Analysis** — STEEP gap, megatrends, signals
+7. **📤 Outputs** — generate manuscript and exports
 
-2. **📄 Review** — read each paper's
-   abstract and keyword score, then
-   click Include / Unsure / Exclude.
-   Auto-saves after every click.
-
-3. **⚙️ Keywords** — tune which words
-   count as fisheries or future signals.
-   Changes re-score all papers live.
-
-Each tab has a **ℹ️ How it works**
-section with detailed instructions.
-
-**Progress is always saved** to
-`data/full_text_review.csv` — close
-the app and continue later anytime.
+Progress saved to `data/` automatically.
 """)
 
     st.metric("Papers in pool", total)
@@ -741,57 +950,393 @@ the app and continue later anytime.
 
 # ── Tabs ──────────────────────────────────────────────────────
 
-tab_search, tab_review, tab_mega, tab_signals, tab_analysis, tab_keywords = st.tabs([
-    "🔍 Search", "📄 Review", "🌍 Megatrends", "📡 Signals", "📊 Analysis", "⚙️ Keywords",
+(tab_article, tab_sections, tab_strategy,
+ tab_search, tab_review, tab_analysis, tab_outputs) = st.tabs([
+    "📋 Article", "✍️ Sections", "🔎 Strategy",
+    "🔍 Search", "📄 Review", "📊 Analysis", "📤 Outputs",
 ])
 
 
 # ══════════════════════════════════════════════════════════════
-# TAB 1 — SEARCH
+# TAB 1 — ARTICLE
+# ══════════════════════════════════════════════════════════════
+
+with tab_article:
+    st.markdown("<div class='lr-section-header'>📋 Article Structure</div>", unsafe_allow_html=True)
+
+    article = load_article_structure()
+
+    sub = st.radio(
+        "view", ["📋 Metadata", "📑 Section Outline"],
+        horizontal=True, label_visibility="collapsed",
+    )
+
+    if sub == "📋 Metadata":
+        with st.form("article_meta_form"):
+            a1, a2 = st.columns(2)
+            with a1:
+                new_title   = st.text_input("Title", value=article.get("title",""))
+                new_journal = st.text_input("Target journal", value=article.get("target_journal",""))
+                new_max_wc  = st.number_input("Max words", min_value=1000, max_value=30000,
+                                              value=int(article.get("max_words", 12000)), step=500)
+            with a2:
+                new_subtitle = st.text_input("Subtitle", value=article.get("subtitle",""))
+
+            st.markdown("**Authors**")
+            authors_df = pd.DataFrame(article.get("authors", []))
+            if authors_df.empty:
+                authors_df = pd.DataFrame(columns=["name","affiliation","email","orcid"])
+            edited_authors = st.data_editor(
+                authors_df, num_rows="dynamic", use_container_width=True,
+                key="authors_de",
+                column_config={
+                    "name":        st.column_config.TextColumn("Name"),
+                    "affiliation": st.column_config.TextColumn("Affiliation"),
+                    "email":       st.column_config.TextColumn("Email"),
+                    "orcid":       st.column_config.TextColumn("ORCID"),
+                },
+            )
+
+            st.markdown("**Keywords**")
+            kw_df = pd.DataFrame({"keyword": article.get("keywords", [])})
+            edited_kws = st.data_editor(
+                kw_df, num_rows="dynamic", use_container_width=True, key="keywords_de",
+                column_config={"keyword": st.column_config.TextColumn("Keyword")},
+            )
+
+            st.markdown("**Research questions**")
+            rq_df = pd.DataFrame({"question": article.get("research_questions", [])})
+            edited_rqs = st.data_editor(
+                rq_df, num_rows="dynamic", use_container_width=True, key="rqs_de",
+                column_config={"question": st.column_config.TextColumn("Research question", width="large")},
+            )
+
+            if st.form_submit_button("💾 Save metadata", type="primary"):
+                article["title"]              = new_title
+                article["subtitle"]           = new_subtitle
+                article["target_journal"]     = new_journal
+                article["max_words"]          = int(new_max_wc)
+                article["authors"]            = edited_authors.dropna(how="all").to_dict("records")
+                article["keywords"]           = [k for k in edited_kws["keyword"].dropna().tolist() if k]
+                article["research_questions"] = [q for q in edited_rqs["question"].dropna().tolist() if q]
+                save_article_structure(article)
+                st.success("Metadata saved.")
+
+    else:  # Section Outline
+        sections_data = load_sections()
+        sec_rows = []
+        for s in article.get("sections", []):
+            text = sections_data.get(s["id"], "")
+            actual_wc = len(text.split()) if text.strip() else 0
+            sec_rows.append({
+                "id":           s["id"],
+                "title":        s["title"],
+                "target_words": s["target_words"],
+                "actual_words": actual_wc,
+            })
+        sec_df = pd.DataFrame(sec_rows)
+        total_actual = int(sec_df["actual_words"].sum()) if not sec_df.empty else 0
+        max_words    = int(article.get("max_words", 12000))
+        pct_used     = min(total_actual / max_words, 1.0) if max_words else 0
+
+        mc1, mc2 = st.columns(2)
+        with mc1:
+            st.metric("Total words written", total_actual)
+        with mc2:
+            st.metric("Word budget", max_words)
+        st.progress(pct_used, text=f"{total_actual:,} / {max_words:,} words ({pct_used*100:.0f}%)")
+
+        st.markdown("**Section outline** — edit target word counts below and save.")
+        with st.form("section_outline_form"):
+            edited_sec = st.data_editor(
+                sec_df[["id","title","target_words","actual_words"]],
+                num_rows="dynamic", use_container_width=True, key="secoutline_de",
+                column_config={
+                    "id":           st.column_config.TextColumn("Section ID"),
+                    "title":        st.column_config.TextColumn("Title", width="large"),
+                    "target_words": st.column_config.NumberColumn("Target words", format="%d"),
+                    "actual_words": st.column_config.NumberColumn("Written", format="%d"),
+                },
+                disabled=["id","actual_words"],
+            )
+            if st.form_submit_button("💾 Save outline", type="primary"):
+                new_sections = []
+                for _, row in edited_sec.iterrows():
+                    if pd.notna(row["id"]) and str(row["id"]).strip():
+                        new_sections.append({
+                            "id":           str(row["id"]).strip(),
+                            "title":        str(row.get("title","")).strip(),
+                            "target_words": int(row.get("target_words", 0) or 0),
+                        })
+                article["sections"] = new_sections
+                save_article_structure(article)
+                st.success("Section outline saved.")
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 2 — SECTIONS
+# ══════════════════════════════════════════════════════════════
+
+with tab_sections:
+    st.markdown("<div class='lr-section-header'>✍️ Section Drafts</div>", unsafe_allow_html=True)
+
+    article_s  = load_article_structure()
+    sec_list   = article_s.get("sections", [])
+
+    if not sec_list:
+        st.info("No sections defined. Go to 📋 Article → Section Outline to define them.")
+    else:
+        sec_options = {s["id"]: s["title"] for s in sec_list}
+        sec_ids     = list(sec_options.keys())
+        sec_titles  = list(sec_options.values())
+
+        # Keep active section in bounds
+        if st.session_state.active_section not in sec_ids:
+            st.session_state.active_section = sec_ids[0]
+
+        sel_title = st.selectbox(
+            "Section",
+            sec_titles,
+            index=sec_ids.index(st.session_state.active_section),
+            key="section_selector",
+        )
+        sec_id = sec_ids[sec_titles.index(sel_title)]
+        st.session_state.active_section = sec_id
+
+        target_words = next((s["target_words"] for s in sec_list if s["id"] == sec_id), 0)
+        sec_key      = f"sectext_{sec_id}"
+
+        # Seed session state from disk on first visit to this section
+        if sec_key not in st.session_state:
+            secs = load_sections()
+            st.session_state[sec_key] = secs.get(sec_id, "")
+
+        current_text = st.session_state[sec_key]
+        wc = len(current_text.split()) if current_text.strip() else 0
+        if target_words > 0:
+            ratio = wc / target_words
+            wc_color = "#28a745" if 0.9 <= ratio <= 1.15 else ("#dc3545" if ratio > 1.15 else "#fd7e14")
+        else:
+            wc_color = "#6c757d"
+
+        badge_col, btn_col = st.columns([3, 1])
+        with badge_col:
+            st.markdown(
+                f"<span class='lr-badge' style='background:{wc_color}'>"
+                f"{wc:,} / {target_words:,} words</span>",
+                unsafe_allow_html=True,
+            )
+        with btn_col:
+            if st.button("↩ Reset from .docx", help="Re-seed from the corresponding Word document"):
+                fresh = seed_sections_from_docx()
+                st.session_state[sec_key] = fresh.get(sec_id, "")
+                secs = load_sections()
+                secs[sec_id] = st.session_state[sec_key]
+                save_sections(secs)
+                st.rerun()
+
+        def _autosave_section():
+            text = st.session_state.get(sec_key, "")
+            secs = load_sections()
+            secs[sec_id] = text
+            save_sections(secs)
+
+        st.text_area(
+            sel_title,
+            key=sec_key,
+            height=520,
+            on_change=_autosave_section,
+            label_visibility="collapsed",
+            placeholder="Start writing or paste your draft here…",
+        )
+
+        notes_key = f"secnotes_{sec_id}"
+        if notes_key not in st.session_state:
+            secs_all = load_sections()
+            st.session_state[notes_key] = secs_all.get(notes_key, "")
+
+        def _autosave_notes():
+            notes = st.session_state.get(notes_key, "")
+            secs = load_sections()
+            secs[notes_key] = notes
+            save_sections(secs)
+
+        with st.expander("✏️ Author notes for this section", expanded=False):
+            st.text_area(
+                "Notes", key=notes_key, height=120,
+                on_change=_autosave_notes,
+                label_visibility="collapsed",
+                placeholder="Reminders, flagged citations, TODOs…",
+            )
+
+        with st.expander("👁 Preview", expanded=False):
+            preview_text = st.session_state.get(sec_key, "")
+            if preview_text.strip():
+                st.markdown(preview_text)
+            else:
+                st.caption("Nothing written yet.")
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 3 — STRATEGY
+# ══════════════════════════════════════════════════════════════
+
+with tab_strategy:
+    st.markdown("<div class='lr-section-header'>🔎 Search Strategy</div>", unsafe_allow_html=True)
+    st.caption("Document the three-step search strategy. Changes are saved to `data/search_strategy.json`.")
+
+    strategy = load_search_strategy()
+
+    # ── Strategy 1 ────────────────────────────────────────────
+    with st.expander("Strategy 1 — Peer-reviewed literature (OpenAlex)", expanded=True):
+        s1 = strategy.get("strategy1", {})
+        with st.form("strat1_form"):
+            st1_purpose  = st.text_area("Purpose", value=s1.get("purpose",""), height=70)
+            c1, c2 = st.columns(2)
+            with c1:
+                st1_db   = st.text_input("Database", value=s1.get("database","OpenAlex"))
+                st1_date = st.text_input("Date conducted", value=s1.get("date",""))
+                st1_retr = st.number_input("Records retrieved",    min_value=0, value=int(s1.get("n_retrieved",0)))
+                st1_dedup= st.number_input("After deduplication",  min_value=0, value=int(s1.get("n_deduped",0)))
+                st1_scr  = st.number_input("Title/abstract screen",min_value=0, value=int(s1.get("n_screened",0)))
+                st1_man  = st.number_input("Manual inclusions",    min_value=0, value=int(s1.get("n_manual",0)))
+            with c2:
+                st.markdown("**Search queries**")
+                q_df = pd.DataFrame({"query": s1.get("queries", [])})
+                new_q = st.data_editor(q_df, num_rows="dynamic", use_container_width=True,
+                                       key="strat1_queries",
+                                       column_config={"query": st.column_config.TextColumn("Query string", width="large")})
+                st.markdown("**Inclusion criteria**")
+                inc_df = pd.DataFrame({"criterion": s1.get("inclusion_criteria", [])})
+                new_inc = st.data_editor(inc_df, num_rows="dynamic", use_container_width=True, key="strat1_inc",
+                                         column_config={"criterion": st.column_config.TextColumn("Criterion", width="large")})
+                st.markdown("**Exclusion criteria**")
+                exc_df = pd.DataFrame({"criterion": s1.get("exclusion_criteria", [])})
+                new_exc = st.data_editor(exc_df, num_rows="dynamic", use_container_width=True, key="strat1_exc",
+                                         column_config={"criterion": st.column_config.TextColumn("Criterion", width="large")})
+
+            if st.form_submit_button("💾 Save Strategy 1", type="primary"):
+                strategy["strategy1"] = {
+                    "purpose":            st1_purpose,
+                    "database":           st1_db,
+                    "date":               st1_date,
+                    "queries":            [q for q in new_q["query"].dropna().tolist() if q],
+                    "n_retrieved":        int(st1_retr),
+                    "n_deduped":          int(st1_dedup),
+                    "n_screened":         int(st1_scr),
+                    "n_manual":           int(st1_man),
+                    "inclusion_criteria": [c for c in new_inc["criterion"].dropna().tolist() if c],
+                    "exclusion_criteria": [c for c in new_exc["criterion"].dropna().tolist() if c],
+                }
+                save_search_strategy(strategy)
+                st.success("Strategy 1 saved.")
+
+    # ── Strategy 2 ────────────────────────────────────────────
+    with st.expander("Strategy 2 — Cross-sectoral megatrends (purposive scan)", expanded=False):
+        s2 = strategy.get("strategy2", {})
+        with st.form("strat2_form"):
+            st2_purpose = st.text_area("Purpose", value=s2.get("purpose",""), height=70)
+            s2c1, s2c2 = st.columns(2)
+            with s2c1:
+                st2_date = st.text_input("Date conducted", value=s2.get("date",""))
+                st2_n    = st.number_input("Number of entries", min_value=0, value=int(s2.get("n_entries",0)))
+            with s2c2:
+                st.markdown("**Sources scanned**")
+                src_df = pd.DataFrame({"source": s2.get("sources", [])})
+                new_src = st.data_editor(src_df, num_rows="dynamic", use_container_width=True, key="strat2_src",
+                                          column_config={"source": st.column_config.TextColumn("Source", width="large")})
+            if st.form_submit_button("💾 Save Strategy 2", type="primary"):
+                strategy["strategy2"] = {
+                    "purpose":  st2_purpose,
+                    "date":     st2_date,
+                    "n_entries":int(st2_n),
+                    "sources":  [s for s in new_src["source"].dropna().tolist() if s],
+                }
+                save_search_strategy(strategy)
+                st.success("Strategy 2 saved.")
+
+    # ── Strategy 3 ────────────────────────────────────────────
+    with st.expander("Strategy 3 — Horizon scan for weak signals (living document)", expanded=False):
+        s3 = strategy.get("strategy3", {})
+        with st.form("strat3_form"):
+            st3_purpose = st.text_area("Purpose", value=s3.get("purpose",""), height=70)
+            st3_method  = st.text_area("Method", value=s3.get("method",""), height=80)
+            st3_status  = st.selectbox("Status", ["Living document","Completed","On hold"],
+                                       index=["Living document","Completed","On hold"].index(
+                                           s3.get("status","Living document"))
+                                       if s3.get("status","Living document") in ["Living document","Completed","On hold"] else 0)
+            if st.form_submit_button("💾 Save Strategy 3", type="primary"):
+                strategy["strategy3"] = {
+                    "purpose": st3_purpose,
+                    "method":  st3_method,
+                    "status":  st3_status,
+                }
+                save_search_strategy(strategy)
+                st.success("Strategy 3 saved.")
+
+    # ── PRISMA summary ─────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### PRISMA flow summary (live)")
+
+    s1_data  = strategy.get("strategy1", {})
+    excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+    mega_cnt = len(load_megatrends(excel_mt))
+    sig_cnt  = len(st.session_state.signals)
+    n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
+
+    pc1, pc2, pc3 = st.columns(3)
+    with pc1:
+        st.markdown("**Strategy 1 — automated**")
+        for label, val in [
+            ("Retrieved", s1_data.get("n_retrieved", "?")),
+            ("After dedup", s1_data.get("n_deduped", "?")),
+            ("Screened", s1_data.get("n_screened", "?")),
+            ("In pool", total),
+            ("Reviewed", n_reviewed),
+            ("Included", n_inc),
+        ]:
+            st.metric(label, val)
+    with pc2:
+        st.markdown("**Strategy 1 — manual**")
+        st.metric("Manual inclusions", s1_data.get("n_manual", "?"))
+        st.markdown("**Strategy 2**")
+        st.metric("Megatrend entries", mega_cnt)
+    with pc3:
+        st.markdown("**Strategy 3**")
+        st.metric("Signals documented", sig_cnt)
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 4 — SEARCH
 # ══════════════════════════════════════════════════════════════
 
 with tab_search:
-    st.markdown("### Search OpenAlex")
+    st.markdown("<div class='lr-section-header'>🔍 Search OpenAlex</div>", unsafe_allow_html=True)
 
     with st.expander("ℹ️ How the Search tab works", expanded=False):
         st.markdown("""
 **Workflow: Build query → Run → Preview → Add to pool → Review**
 
-1. **Build your query** — add one row per search term. Choose how each term relates
-   to the previous one using the **AND / OR / NOT** dropdown:
-   - **AND** — both terms must appear (narrows results)
-   - **OR** — either term may appear (broadens results)
-   - **NOT** — excludes papers containing this term
-   Multi-word phrases are automatically quoted. The live preview shows exactly what
-   OpenAlex receives.
+1. **Build your query** — add one row per search term. Choose AND / OR / NOT.
+   Multi-word phrases are automatically quoted.
 
-2. **Run Search** — fetches up to the configured maximum from OpenAlex and shows a
-   preview of results. **Save query** adds it to your saved list without running.
+2. **Run Search** — fetches up to the configured maximum from OpenAlex.
 
-3. **Saved queries** — your query history. Run any saved query again with ▶,
-   or delete it with 🗑. Papers already in the pool are skipped automatically.
+3. **Saved queries** — run any saved query again with ▶, or delete with 🗑.
 
-4. **Add to pool** — after previewing results, click to merge new papers into your
-   review pool. Your existing verdicts are never overwritten.
+4. **Add to pool** — after previewing results, click to merge new papers.
 
-> All progress is saved to `data/full_text_review.csv`. Close and reopen anytime.
+> All progress is saved to `data/full_text_review.csv`.
 """)
 
-    # ── Settings (compact) ─────────────────────────────────────
     sc1, sc2, sc3 = st.columns([2, 2, 1])
     with sc1:
         max_results = st.number_input(
-            "Max results per query",
-            min_value=10, max_value=1000, step=10,
+            "Max results per query", min_value=10, max_value=1000, step=10,
             value=int(cfg.get("max_results", 200)),
-            help="OpenAlex returns up to 200 per page; larger values trigger multiple pages.",
         )
     with sc2:
-        email = st.text_input(
-            "Email (polite pool)",
-            value=cfg.get("email", "tsz000@uit.no"),
-            help="Included in API requests for OpenAlex polite pool priority.",
-        )
+        email = st.text_input("Email (polite pool)", value=cfg.get("email", "tsz000@uit.no"))
     with sc3:
         st.markdown("<div style='margin-top:26px'>", unsafe_allow_html=True)
         if st.button("💾 Save settings", use_container_width=True):
@@ -803,21 +1348,17 @@ with tab_search:
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # ── Row-based boolean query builder ───────────────────────
     st.markdown("#### Build a search query")
-    st.caption("Add one search term per row. Use the AND / OR / NOT dropdown to define the relationship between terms.")
+    st.caption("Add one search term per row. Use AND / OR / NOT to define relationships.")
 
     rows_to_delete = None
     for i, row in enumerate(st.session_state.search_rows):
         rid = row["id"]
         if i == 0:
-            # First row: no operator dropdown
             c_label, c_term, c_del = st.columns([0.6, 5, 0.5])
             with c_label:
                 st.markdown(
-                    "<div style='text-align:right;padding-top:34px;color:#888;"
-                    "font-size:0.85rem'>Find</div>",
+                    "<div style='text-align:right;padding-top:34px;color:#888;font-size:0.85rem'>Find</div>",
                     unsafe_allow_html=True,
                 )
         else:
@@ -826,15 +1367,14 @@ with tab_search:
                 new_op = st.selectbox(
                     "op", ["AND", "OR", "NOT"],
                     index=["AND", "OR", "NOT"].index(row.get("op") or "AND"),
-                    key=f"s_op_{rid}",
-                    label_visibility="collapsed",
+                    key=f"s_op_{rid}", label_visibility="collapsed",
                 )
                 st.session_state.search_rows[i]["op"] = new_op
 
         with c_term:
             new_term = st.text_input(
                 "term", value=row["term"], key=f"s_term_{rid}",
-                placeholder='Term or phrase — multi-word phrases are auto-quoted, e.g. marine capture',
+                placeholder='Term or phrase — multi-word phrases are auto-quoted',
                 label_visibility="collapsed",
             )
             st.session_state.search_rows[i]["term"] = new_term
@@ -863,7 +1403,6 @@ with tab_search:
             st.session_state.search_next_id = 1
             st.rerun()
 
-    # Live query preview
     current_query = build_query_from_rows(st.session_state.search_rows)
     if current_query:
         st.markdown("**Query preview:**")
@@ -871,7 +1410,6 @@ with tab_search:
     else:
         st.caption("Fill in at least one row above to build a query.")
 
-    # Action buttons
     st.markdown("")
     run_c, save_c, _ = st.columns([1.2, 1.2, 3])
     with run_c:
@@ -889,46 +1427,17 @@ with tab_search:
                 save_search_config(cfg)
             st.success("Query saved.")
 
-    # ── Search tips ───────────────────────────────────────────
-    with st.expander("💡 How to build search queries — tips & examples", expanded=False):
+    with st.expander("💡 Query tips & examples", expanded=False):
         st.markdown("""
-**Operators**
-
 | Operator | Effect | Example |
 |----------|--------|---------|
-| **AND** | Both terms must appear — narrows results | `fisheries` AND `climate change` |
-| **OR** | Either term may appear — broadens results | `aquaculture` OR `"fish farming"` |
-| **NOT** | Excludes papers containing this term | `fisheries` AND `management` NOT `aquaculture` |
+| **AND** | Both must appear — narrows | `fisheries` AND `climate change` |
+| **OR** | Either may appear — broadens | `aquaculture` OR `"fish farming"` |
+| **NOT** | Excludes this term | `fisheries` AND `management` NOT `aquaculture` |
 
-**Multi-word phrases** are automatically quoted when you type more than one word in a row, so *small-scale fisheries* becomes `"small-scale fisheries"` in the query.
-
----
-
-**Example queries**
-
-*Futures research on fisheries:*
-```
-fisheries AND future AND scenario
-```
-
-*Broad capture fishery coverage (any of these terms):*
-```
-fisheries OR "fish stocks" OR "marine capture"
-```
-
-*Climate impacts, excluding aquaculture studies:*
-```
-fisheries AND "climate change" NOT aquaculture
-```
-
-*Governance and policy angles:*
-```
-fisheries AND (governance OR policy OR regulation)
-```
-> Note: parentheses are passed directly to OpenAlex and are supported in its full-text search syntax.
+Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
 """)
 
-    # ── Saved queries ──────────────────────────────────────────
     saved_queries = cfg.get("saved_queries", [])
     if saved_queries:
         st.markdown("---")
@@ -942,13 +1451,12 @@ fisheries AND (governance OR policy OR regulation)
                     st.session_state.pending_run_query = sq
                     st.rerun()
             with sq_c3:
-                if st.button("🗑", key=f"del_sq_{qi}", help="Delete this query"):
+                if st.button("🗑", key=f"del_sq_{qi}", help="Delete"):
                     cfg["saved_queries"].pop(qi)
                     st.session_state.search_cfg = cfg
                     save_search_config(cfg)
                     st.rerun()
 
-    # ── Execute search ─────────────────────────────────────────
     query_to_run = None
     if run_btn and current_query:
         query_to_run = current_query
@@ -956,23 +1464,19 @@ fisheries AND (governance OR policy OR regulation)
         query_to_run = st.session_state.pop("pending_run_query")
 
     if query_to_run:
-        all_records: list[dict] = []
+        all_records: list = []
         with st.status(f'Searching: {query_to_run[:60]}{"…" if len(query_to_run)>60 else ""}',
                        expanded=True) as status:
             def log(msg): st.write(msg)
             recs = fetch_openalex(query_to_run, max_results, email, log_fn=log)
             all_records.extend(recs)
-
-            seen_ids: set[str] = set()
+            seen_ids: set = set()
             deduped = [r for r in all_records
                        if r["openalex_id"] not in seen_ids
-                       and not seen_ids.add(r["openalex_id"])]  # type: ignore[func-returns-value]
+                       and not seen_ids.add(r["openalex_id"])]
             st.write(f"**Total:** {len(all_records)} records → {len(deduped)} unique")
             status.update(label=f"Done — {len(deduped)} unique records found", state="complete")
-
         st.session_state.search_preview = deduped
-
-    # ── Preview + merge ────────────────────────────────────────
 
     preview = st.session_state.search_preview
     if preview:
@@ -984,30 +1488,23 @@ fisheries AND (governance OR policy OR regulation)
         info_col, btn_col = st.columns([3, 1])
         with info_col:
             st.info(
-                f"**{n_new}** new papers not yet in your pool  ·  "
-                f"**{n_dup}** already in pool (will be skipped)  ·  "
-                f"Pool will grow from **{total}** → **{total + n_new}**"
+                f"**{n_new}** new  ·  **{n_dup}** already in pool  ·  "
+                f"Pool grows from **{total}** → **{total + n_new}**"
             )
         with btn_col:
-            if st.button(
-                f"➕ Add {n_new} papers to pool",
-                type="primary",
-                use_container_width=True,
-                disabled=(n_new == 0),
-            ):
+            if st.button(f"➕ Add {n_new} papers", type="primary",
+                         use_container_width=True, disabled=(n_new == 0)):
                 with st.spinner("Scoring and saving…"):
                     added, skipped = merge_records(preview, kw)
-                st.success(f"Added {added} papers. {skipped} duplicates skipped.")
+                st.success(f"Added {added}. {skipped} duplicates skipped.")
                 st.session_state.search_preview = []
                 st.rerun()
 
-        # Preview table
-        prev_df = pd.DataFrame(preview)[["title", "year", "journal", "authors", "openalex_id"]]
-        prev_df.insert(0, "In pool", prev_df["openalex_id"].isin(existing_ids).map({True: "✓", False: "new"}))
+        prev_df = pd.DataFrame(preview)[["title","year","journal","authors","openalex_id"]]
+        prev_df.insert(0, "In pool", prev_df["openalex_id"].isin(existing_ids).map({True:"✓",False:"new"}))
         prev_df = prev_df.drop(columns=["openalex_id"])
         st.dataframe(prev_df, use_container_width=True, height=350)
 
-    # ── Pool overview ──────────────────────────────────────────
     st.markdown("---")
     st.markdown("#### Current review pool")
     if total == 0:
@@ -1015,21 +1512,16 @@ fisheries AND (governance OR policy OR regulation)
     else:
         overview_cols = st.columns(4)
         vc = live_verdicts.value_counts() if total else {}
-        with overview_cols[0]:
-            st.metric("Total papers", total)
-        with overview_cols[1]:
-            st.metric("🟢 AI green", int(vc.get("green",  0)))
-        with overview_cols[2]:
-            st.metric("🟠 AI orange", int(vc.get("orange", 0)))
-        with overview_cols[3]:
-            st.metric("🔴 AI red", int(vc.get("red", 0)))
+        with overview_cols[0]: st.metric("Total papers", total)
+        with overview_cols[1]: st.metric("🟢 AI green",  int(vc.get("green",  0)))
+        with overview_cols[2]: st.metric("🟠 AI orange", int(vc.get("orange", 0)))
+        with overview_cols[3]: st.metric("🔴 AI red",    int(vc.get("red",    0)))
 
         if st.checkbox("Show full pool table"):
-            show_df = pool[["title", "year", "journal", "search_query",
-                            "date_added", "kw_verdict", "user_verdict"]].copy()
+            show_df = pool[["title","year","journal","search_query",
+                            "date_added","kw_verdict","user_verdict"]].copy()
             st.dataframe(show_df, use_container_width=True, height=400)
 
-        # OA enrichment
         n_with_doi    = int((pool["doi"].str.strip() != "").sum())
         n_with_pdf    = int((pool["pdf_url"].str.strip() != "").sum())
         n_needs_enrich = n_with_doi - n_with_pdf
@@ -1037,65 +1529,40 @@ fisheries AND (governance OR policy OR regulation)
         st.markdown("---")
         enrich_col, enrich_info = st.columns([1, 2])
         with enrich_col:
-            enrich_btn = st.button(
-                "🔗 Fetch open-access links",
-                disabled=(n_needs_enrich == 0),
-                use_container_width=True,
-                help="Queries Unpaywall for a direct PDF link for every paper that has a DOI but no PDF link yet.",
-            )
+            enrich_btn = st.button("🔗 Fetch open-access links",
+                                   disabled=(n_needs_enrich == 0), use_container_width=True)
         with enrich_info:
-            st.caption(
-                f"📄 PDF links found: **{n_with_pdf}** of {n_with_doi} papers with DOIs  ·  "
-                f"{n_needs_enrich} remaining to check"
-            )
+            st.caption(f"PDF links: **{n_with_pdf}** of {n_with_doi} with DOIs  ·  {n_needs_enrich} remaining")
 
         if enrich_btn:
             with st.status("Querying Unpaywall…", expanded=True) as status:
                 def _log(msg): st.write(msg)
-                found, checked = enrich_unpaywall(email=cfg.get("email", "tsz000@uit.no"), log_fn=_log)
-                status.update(
-                    label=f"Done — found PDF links for {found} / {checked} papers",
-                    state="complete",
-                )
+                found, checked = enrich_unpaywall(email=cfg.get("email","tsz000@uit.no"), log_fn=_log)
+                status.update(label=f"Done — {found} / {checked} PDF links found", state="complete")
             st.rerun()
 
         st.markdown("")
         st.markdown("**Export**")
         exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
-
         with exp_col1:
-            csv_bytes = pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
-            st.download_button(
-                "⬇️ Full pool (CSV)",
-                data=csv_bytes,
-                file_name="full_text_review.csv",
-                mime="text/csv",
-                use_container_width=True,
-            )
-
+            st.download_button("⬇️ Full pool (CSV)",
+                data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
+                file_name="full_text_review.csv", mime="text/csv", use_container_width=True)
         with exp_col2:
-            bib_filter = st.selectbox(
-                "BibTeX export",
-                ["Included papers", "Included + Unsure", "All reviewed", "Entire pool"],
-                label_visibility="collapsed",
-            )
+            bib_filter = st.selectbox("BibTeX export",
+                ["Included papers","Included + Unsure","All reviewed","Entire pool"],
+                label_visibility="collapsed")
             bib_count_map = {
-                "Included papers":   int((pool["user_verdict"] == "include").sum()),
-                "Included + Unsure": int(pool["user_verdict"].isin(["include", "unsure"]).sum()),
+                "Included papers":   int((pool["user_verdict"]=="include").sum()),
+                "Included + Unsure": int(pool["user_verdict"].isin(["include","unsure"]).sum()),
                 "All reviewed":      int(pool["user_verdict"].str.strip().astype(bool).sum()),
                 "Entire pool":       len(pool),
             }
             n_bib = bib_count_map[bib_filter]
             bib_bytes = _cached_bibtex(bib_filter, pool_mtime) if n_bib > 0 else b""
-            st.download_button(
-                f"⬇️ Export BibTeX ({n_bib})",
-                data=bib_bytes,
-                file_name="trendfish_references.bib",
-                mime="text/plain",
-                disabled=(n_bib == 0),
-                use_container_width=True,
-            )
-
+            st.download_button(f"⬇️ Export BibTeX ({n_bib})", data=bib_bytes,
+                file_name="trendfish_references.bib", mime="text/plain",
+                disabled=(n_bib == 0), use_container_width=True)
         with exp_col3:
             st.caption(
                 f"Included: **{int((pool['user_verdict']=='include').sum())}**  ·  "
@@ -1106,49 +1573,29 @@ fisheries AND (governance OR policy OR regulation)
 
 
 # ══════════════════════════════════════════════════════════════
-# TAB 2 — REVIEW
+# TAB 5 — REVIEW
 # ══════════════════════════════════════════════════════════════
 
 with tab_review:
+    st.markdown("<div class='lr-section-header'>📄 Paper Review</div>", unsafe_allow_html=True)
 
     with st.expander("ℹ️ How the Review tab works", expanded=False):
         st.markdown("""
-**Goal:** Go through each paper and record your own inclusion/exclusion verdict.
+**Goal:** Go through each paper and record your inclusion/exclusion verdict.
 
-**Keyword score (top of each paper)**
-The coloured banner shows the *AI pre-screening verdict* based on the keyword lists you configured
-in the ⚙️ Keywords tab:
 - 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
 - 🟠 **ORANGE** — borderline or missing abstract → needs your judgement
 - 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
 
-The score bars show the raw fisheries (0–8) and future (0–10) scores.
-Click **Matched keywords** to see exactly which terms triggered the score.
+Use **sidebar filters** to focus on a subset. Verdicts save automatically.
 
-**Navigating papers**
-- Use **◀ Previous / Next ▶** or type a number to jump directly.
-- Use the **sidebar filters** to focus on a subset:
-  - *AI keyword verdict* — show only green/orange/red papers
-  - *Review status* — show only papers you haven't reviewed yet (most efficient workflow)
-
-**Giving your verdict**
-1. Read the abstract (and the DOI if needed).
-2. Click one of the three verdict buttons:
-   - 🟢 **INCLUDE** — paper meets inclusion criteria for full-text review
-   - 🟠 **UNSURE** — you're not certain; flag for later or a second opinion
-   - 🔴 **EXCLUDE** — paper clearly does not meet criteria
-3. Add optional notes (methodology, reason for exclusion, etc.).
-4. The verdict saves immediately to `data/full_text_review.csv`.
-   When filtering on *Unreviewed*, the app auto-advances to the next paper after each verdict.
-
-> **Tip:** Start with the 🔴 RED filter to quickly clear obvious exclusions, then work through 🟠 ORANGE.
+> **Tip:** Start with the 🔴 RED filter to clear obvious exclusions, then work through 🟠 ORANGE.
 """)
 
     if total == 0:
         st.info("No papers in pool yet. Use the 🔍 Search tab to add papers.")
         st.stop()
 
-    # ── Apply filters ──────────────────────────────────────────
     mask = pd.Series([True] * total, index=pool.index)
     if ai_filter != "All":
         mask &= (live_verdicts == ai_filter)
@@ -1169,7 +1616,6 @@ Click **Matched keywords** to see exactly which terms triggered the score.
     row_idx = filtered_idx[pos]
     row     = pool.loc[row_idx]
 
-    # ── Navigation ─────────────────────────────────────────────
     nav_l, nav_m, nav_r = st.columns([1, 3, 1])
     with nav_l:
         if st.button("◀ Previous", disabled=(pos == 0), use_container_width=True):
@@ -1190,8 +1636,7 @@ Click **Matched keywords** to see exactly which terms triggered the score.
 
     st.markdown("---")
 
-    # ── Live keyword score ─────────────────────────────────────
-    sc      = score_paper(str(row.get("title", "")), str(row.get("abstract", "")), kw)
+    sc      = score_paper(str(row.get("title","")), str(row.get("abstract","")), kw)
     vc_col  = VERDICT_COLORS[sc["verdict"]]
 
     sc_left, sc_right = st.columns([3, 1])
@@ -1230,34 +1675,28 @@ Click **Matched keywords** to see exactly which terms triggered the score.
         mc1, mc2, mc3 = st.columns(3)
         with mc1:
             st.markdown("**Fisheries hits**")
-            for t in sc["fish_hits"]:
-                st.markdown(f"<div class='kw-match'>🐟 {t}</div>", unsafe_allow_html=True)
+            for t in sc["fish_hits"]: st.markdown(f"<div class='kw-match'>🐟 {t}</div>", unsafe_allow_html=True)
             if not sc["fish_hits"]: st.caption("none")
         with mc2:
             st.markdown("**Future hits**")
-            for t in sc["future_hits"]:
-                st.markdown(f"<div class='kw-match'>🔭 {t}</div>", unsafe_allow_html=True)
+            for t in sc["future_hits"]: st.markdown(f"<div class='kw-match'>🔭 {t}</div>", unsafe_allow_html=True)
             if not sc["future_hits"]: st.caption("none")
         with mc3:
             st.markdown("**Exclusion hits**")
-            for t in sc["retro"]:
-                st.markdown(f"<div class='kw-match' style='color:#dc3545'>⏪ {t}</div>", unsafe_allow_html=True)
-            for t in sc["bio"]:
-                st.markdown(f"<div class='kw-match' style='color:#dc3545'>🧬 {t}</div>", unsafe_allow_html=True)
-            for t in sc["nonfish"]:
-                st.markdown(f"<div class='kw-match' style='color:#dc3545'>🚫 {t}</div>", unsafe_allow_html=True)
+            for t in sc["retro"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>⏪ {t}</div>", unsafe_allow_html=True)
+            for t in sc["bio"]:   st.markdown(f"<div class='kw-match' style='color:#dc3545'>🧬 {t}</div>", unsafe_allow_html=True)
+            for t in sc["nonfish"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>🚫 {t}</div>", unsafe_allow_html=True)
             if not (sc["retro"] + sc["bio"] + sc["nonfish"]): st.caption("none")
 
-    # ── Paper metadata ─────────────────────────────────────────
     title   = str(row.get("title",   "")).strip() or "(no title)"
     authors = str(row.get("authors", "")).strip()
     year    = str(row.get("year",    "")).strip()
     journal = str(row.get("journal", "")).strip()
     doi     = str(row.get("doi",     "")).strip()
-    oa_id   = str(row.get("openalex_id", "")).strip()
-    sq      = str(row.get("search_query", "")).strip()
-    pdf_url = str(row.get("pdf_url", "")).strip()
-    is_oa   = str(row.get("is_oa",   "")).strip().lower()
+    oa_id   = str(row.get("openalex_id","")).strip()
+    sq      = str(row.get("search_query","")).strip()
+    pdf_url = str(row.get("pdf_url","")).strip()
+    is_oa   = str(row.get("is_oa","")).strip().lower()
 
     st.markdown(f"### {title}")
     meta = []
@@ -1265,38 +1704,27 @@ Click **Matched keywords** to see exactly which terms triggered the score.
     if year:    meta.append(year)
     if journal: meta.append(f"*{journal}*")
     if meta:
-        st.markdown(
-            "<div style='color:#555;font-size:0.9rem'>" + "  ·  ".join(meta) + "</div>",
-            unsafe_allow_html=True,
-        )
+        st.markdown("<div style='color:#555;font-size:0.9rem'>" + "  ·  ".join(meta) + "</div>",
+                    unsafe_allow_html=True)
 
-    # PDF / access links
     link_row, badge_row = st.columns([3, 1])
     with link_row:
-        if pdf_url:
-            st.link_button("📄 Open PDF ↗", pdf_url, type="primary")
+        if pdf_url: st.link_button("📄 Open PDF ↗", pdf_url, type="primary")
         sec_links = []
-        if doi:
-            doi_url = doi if doi.startswith("http") else f"https://doi.org/{doi}"
-            sec_links.append(f"[DOI ↗]({doi_url})")
-        if oa_id:
-            sec_links.append(f"[OpenAlex ↗]({oa_id})")
-        if sec_links:
-            st.markdown("  ·  ".join(sec_links))
+        if doi:   sec_links.append(f"[DOI ↗]({'https://doi.org/'+doi if not doi.startswith('http') else doi})")
+        if oa_id: sec_links.append(f"[OpenAlex ↗]({oa_id})")
+        if sec_links: st.markdown("  ·  ".join(sec_links))
     with badge_row:
         badge = OA_STATUS.get(is_oa)
         if badge:
             icon, label, color = badge
-            st.markdown(
-                f"<div style='text-align:right;color:{color};font-size:0.85rem;"
-                f"padding-top:6px'>{icon} {label}</div>",
-                unsafe_allow_html=True,
-            )
+            st.markdown(f"<div style='text-align:right;color:{color};font-size:0.85rem;padding-top:6px'>{icon} {label}</div>",
+                        unsafe_allow_html=True)
 
     if sq: st.caption(f"Found via: *{sq}*")
 
-    abstract = str(row.get("abstract", "")).strip()
-    ab_src   = str(row.get("abstract_source", "")).strip()
+    abstract = str(row.get("abstract","")).strip()
+    ab_src   = str(row.get("abstract_source","")).strip()
     if abstract and len(abstract) > 20:
         src_note = " *(fetched from OpenAlex)*" if ab_src == "openalex" else ""
         st.markdown(f"**Abstract**{src_note}")
@@ -1305,10 +1733,8 @@ Click **Matched keywords** to see exactly which terms triggered the score.
         st.warning("No abstract available — check DOI before deciding.")
 
     st.markdown("---")
-
-    # ── Verdict panel ──────────────────────────────────────────
-    current_verdict = str(row.get("user_verdict", "")).strip()
-    current_notes   = str(row.get("user_notes",   "")).strip()
+    current_verdict = str(row.get("user_verdict","")).strip()
+    current_notes   = str(row.get("user_notes",  "")).strip()
 
     st.subheader("Your verdict")
     btn_cols = st.columns(3)
@@ -1324,10 +1750,8 @@ Click **Matched keywords** to see exactly which terms triggered the score.
             if st.button(f"Set {label}", key=f"btn_{key}", use_container_width=True):
                 clicked = key
 
-    notes_input = st.text_area(
-        "Notes (optional)", value=current_notes, height=80,
-        placeholder="Comments, flags, or reasons…",
-    )
+    notes_input = st.text_area("Notes (optional)", value=current_notes, height=80,
+                               placeholder="Comments, flags, or reasons…")
 
     if clicked is not None:
         save_verdict_to_pool(pool, row_idx, clicked, notes_input)
@@ -1345,548 +1769,530 @@ Click **Matched keywords** to see exactly which terms triggered the score.
 
     if current_verdict:
         icon, label, _, col_hex = VERDICTS[current_verdict]
-        reviewed_at = str(row.get("reviewed_at", "")).strip()
+        reviewed_at = str(row.get("reviewed_at","")).strip()
         st.markdown(
             f"<div style='font-size:0.9rem;color:{col_hex};margin-top:6px'>"
             f"Your verdict: {icon} {label}"
             + (f" — *{current_notes}*" if current_notes else "")
             + "</div>", unsafe_allow_html=True,
         )
-        if reviewed_at:
-            st.caption(f"Reviewed at: {reviewed_at}")
+        if reviewed_at: st.caption(f"Reviewed at: {reviewed_at}")
 
 
 # ══════════════════════════════════════════════════════════════
-# TAB 3 — MEGATRENDS
-# ══════════════════════════════════════════════════════════════
-
-with tab_mega:
-    st.markdown("### Cross-sectoral Megatrends & Drivers")
-    st.caption("Strategy 2 — purposive scan of foresight publications. Source: `data/manual_literature_search.xlsx`")
-
-    with st.expander("ℹ️ How this tab works", expanded=False):
-        st.markdown("""
-**This tab shows the cross-sectoral megatrend database (search strategy 2).**
-
-Entries come from major foresight publications — consultancy reports, government outlook documents,
-academic megatrend analyses, and NGO publications. Each entry is one trend or driver extracted
-from a source.
-
-STEEP classification is applied automatically using keyword matching (same rules as the gap analysis
-in the Analysis tab). You can filter, search, and add new entries directly from here.
-
-> Changes to entries are written back to `data/manual_literature_search.xlsx` immediately.
-""")
-
-    excel_mtime = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
-    mega_df = load_megatrends(excel_mtime)
-
-    # ── Filters ───────────────────────────────────────────────
-    f1, f2, f3 = st.columns([2, 2, 3])
-    with f1:
-        steep_filter = st.multiselect(
-            "STEEP category", STEEP_CATS,
-            default=STEEP_CATS, key="mega_steep_filter",
-        )
-    with f2:
-        all_types = sorted(mega_df["source_type"].dropna().unique().tolist())
-        type_filter = st.multiselect(
-            "Source type", all_types, default=all_types, key="mega_type_filter",
-        )
-    with f3:
-        text_search = st.text_input("Search trends/details", key="mega_search",
-                                    placeholder="Type to filter…")
-
-    filtered = mega_df[
-        mega_df["steep"].isin(steep_filter) &
-        mega_df["source_type"].isin(type_filter)
-    ]
-    if text_search:
-        mask = (
-            filtered["trend"].str.contains(text_search, case=False, na=False) |
-            filtered["details"].str.contains(text_search, case=False, na=False)
-        )
-        filtered = filtered[mask]
-
-    st.caption(f"Showing **{len(filtered)}** of {len(mega_df)} entries")
-
-    # ── STEEP distribution chart ──────────────────────────────
-    steep_counts = (
-        filtered["steep"]
-        .value_counts()
-        .reindex(STEEP_CATS, fill_value=0)
-        .reset_index()
-    )
-    steep_counts.columns = ["STEEP", "Count"]
-    steep_counts["Pct"] = (steep_counts["Count"] / len(filtered) * 100).round(1)
-    fig_mega = px.bar(
-        steep_counts, x="STEEP", y="Count",
-        color="STEEP", color_discrete_map=STEEP_COLORS,
-        text=steep_counts["Pct"].apply(lambda v: f"{v:.0f}%"),
-        title="STEEP distribution — cross-sectoral megatrends",
-        height=300,
-    )
-    fig_mega.update_layout(showlegend=False, margin=dict(t=40, b=20))
-    fig_mega.update_traces(textposition="outside")
-    st.plotly_chart(fig_mega, use_container_width=True)
-
-    # ── Table ─────────────────────────────────────────────────
-    display_cols = ["trend","steep","source_type","year","author","source"]
-    st.dataframe(
-        filtered[[c for c in display_cols if c in filtered.columns]],
-        use_container_width=True,
-        height=380,
-        column_config={
-            "trend":       st.column_config.TextColumn("Trend / Driver", width="large"),
-            "steep":       st.column_config.TextColumn("STEEP", width="small"),
-            "source_type": st.column_config.TextColumn("Type", width="small"),
-            "year":        st.column_config.NumberColumn("Year", format="%d", width="small"),
-            "author":      st.column_config.TextColumn("Author", width="medium"),
-            "source":      st.column_config.LinkColumn("Source", width="medium"),
-        },
-    )
-
-    # ── Add new entry ─────────────────────────────────────────
-    st.markdown("---")
-    with st.expander("➕ Add new megatrend entry", expanded=False):
-        with st.form("add_mega_form", clear_on_submit=True):
-            ac1, ac2 = st.columns(2)
-            with ac1:
-                new_trend   = st.text_input("Trend / driver label *")
-                new_author  = st.text_input("Author(s)")
-                new_year    = st.number_input("Year", min_value=1990,
-                                              max_value=2030, value=2024, step=1)
-            with ac2:
-                new_details = st.text_area("Details / description", height=100)
-                new_source  = st.text_input("Source URL or name")
-                new_stype   = st.selectbox("Source type",
-                    ["Article","Consultancy","Government","NGO / Think Tank",
-                     "Book / Chapter","Business","Unclassified"])
-            new_title    = st.text_input("Publication title")
-            new_comments = st.text_area("Comments", height=60)
-            if st.form_submit_button("💾 Save entry", type="primary"):
-                if not new_trend.strip():
-                    st.error("Trend label is required.")
-                else:
-                    add_megatrend_to_excel({
-                        "trend": new_trend, "details": new_details,
-                        "author": new_author, "source": new_source,
-                        "title": new_title, "comments": new_comments,
-                        "doi": "", "year": int(new_year), "source_type": new_stype,
-                    })
-                    st.success(f"Entry '{new_trend}' added to the Excel database.")
-                    st.rerun()
-
-
-# ══════════════════════════════════════════════════════════════
-# TAB 4 — SIGNALS
-# ══════════════════════════════════════════════════════════════
-
-with tab_signals:
-    st.markdown("### Weak & Emerging Signals")
-    st.caption("Strategy 3 — living document of early indicators of change. Saved to `data/signals.json`")
-
-    with st.expander("ℹ️ How this tab works", expanded=False):
-        st.markdown("""
-**Weak signals** are early, often ambiguous observations that may indicate incipient shifts in the
-conditions facing fisheries systems. They are not yet prominent in formal academic or institutional
-literature.
-
-Add a signal when you observe something — a news item, a policy development, a market shift, a
-technology announcement — that could be relevant to the future of fisheries. Document it carefully
-with a source and date so it can be verified and cited later.
-
-- **Monitoring** — worth watching, not yet confirmed as significant
-- **Confirmed** — corroborated by multiple independent sources
-- **Dismissed** — turned out to be noise or not relevant
-
-> Signals are saved to `data/signals.json` and can be exported from the Analysis tab.
-""")
-
-    signals = st.session_state.signals
-
-    STATUS_COLORS = {
-        "Monitoring": "#fd7e14", "Confirmed": "#28a745", "Dismissed": "#6c757d",
-    }
-
-    # ── Add new signal ─────────────────────────────────────────
-    with st.expander("➕ Add new signal", expanded=(len(signals) == 0)):
-        with st.form("add_signal_form", clear_on_submit=True):
-            s1, s2 = st.columns(2)
-            with s1:
-                sig_title  = st.text_input("Signal title *")
-                sig_source = st.text_input("Source name")
-                sig_date   = st.text_input("Date observed (YYYY-MM-DD)",
-                                           value=datetime.today().strftime("%Y-%m-%d"))
-                sig_steep  = st.selectbox("STEEP category", STEEP_CATS)
-                sig_status = st.selectbox("Status", ["Monitoring","Confirmed","Dismissed"])
-            with s2:
-                sig_desc  = st.text_area("Description *", height=110,
-                    placeholder="What is happening? Why might it matter?")
-                sig_url   = st.text_input("Source URL")
-                sig_rel   = st.text_area("Fisheries relevance", height=80,
-                    placeholder="How could this signal affect fisheries systems?")
-            if st.form_submit_button("💾 Save signal", type="primary"):
-                if not sig_title.strip() or not sig_desc.strip():
-                    st.error("Title and description are required.")
-                else:
-                    new_id  = max((s["id"] for s in signals), default=0) + 1
-                    signals.append({
-                        "id": new_id, "title": sig_title, "description": sig_desc,
-                        "source": sig_source, "url": sig_url, "date": sig_date,
-                        "steep": sig_steep, "fisheries_relevance": sig_rel,
-                        "status": sig_status,
-                    })
-                    st.session_state.signals = signals
-                    save_signals(signals)
-                    st.success(f"Signal '{sig_title}' saved.")
-                    st.rerun()
-
-    st.markdown("---")
-    if not signals:
-        st.info("No signals documented yet. Use the form above to add the first one.")
-    else:
-        st.markdown(f"**{len(signals)} signal{'s' if len(signals) != 1 else ''} documented**")
-        for sig in signals:
-            sid        = sig["id"]
-            s_color    = STEEP_COLORS.get(sig["steep"], "#999")
-            st_color   = STATUS_COLORS.get(sig["status"], "#999")
-            is_editing = (st.session_state.editing_signal == sid)
-
-            with st.container(border=True):
-                h1, h2 = st.columns([5, 1])
-                with h1:
-                    st.markdown(
-                        f"<span style='background:{s_color};color:white;padding:2px 8px;"
-                        f"border-radius:4px;font-size:0.8rem'>{sig['steep']}</span>&nbsp;&nbsp;"
-                        f"**{sig['title']}**&nbsp;&nbsp;"
-                        f"<span style='color:#888;font-size:0.85rem'>{sig.get('date','')}</span>",
-                        unsafe_allow_html=True,
-                    )
-                with h2:
-                    btn1, btn2 = st.columns(2)
-                    with btn1:
-                        if st.button("✏️", key=f"edit_sig_{sid}", help="Edit"):
-                            st.session_state.editing_signal = None if is_editing else sid
-                            st.rerun()
-                    with btn2:
-                        if st.button("🗑", key=f"del_sig_{sid}", help="Delete"):
-                            st.session_state.signals = [s for s in signals if s["id"] != sid]
-                            save_signals(st.session_state.signals)
-                            st.rerun()
-
-                if not is_editing:
-                    st.markdown(sig["description"])
-                    if sig.get("fisheries_relevance"):
-                        st.caption(f"*Fisheries relevance:* {sig['fisheries_relevance']}")
-                    foot1, foot2 = st.columns([3, 1])
-                    with foot1:
-                        if sig.get("url"):
-                            st.markdown(f"[{sig.get('source') or sig['url']}]({sig['url']})")
-                        elif sig.get("source"):
-                            st.caption(sig["source"])
-                    with foot2:
-                        st.markdown(
-                            f"<div style='text-align:right;color:{st_color};"
-                            f"font-size:0.85rem'>● {sig['status']}</div>",
-                            unsafe_allow_html=True,
-                        )
-                else:
-                    with st.form(f"edit_sig_form_{sid}", clear_on_submit=False):
-                        e1, e2 = st.columns(2)
-                        with e1:
-                            e_title  = st.text_input("Title", value=sig["title"])
-                            e_source = st.text_input("Source", value=sig.get("source",""))
-                            e_date   = st.text_input("Date", value=sig.get("date",""))
-                            e_steep  = st.selectbox("STEEP", STEEP_CATS,
-                                index=STEEP_CATS.index(sig["steep"]) if sig["steep"] in STEEP_CATS else 0)
-                            e_status = st.selectbox("Status",
-                                ["Monitoring","Confirmed","Dismissed"],
-                                index=["Monitoring","Confirmed","Dismissed"].index(sig["status"]))
-                        with e2:
-                            e_desc = st.text_area("Description", value=sig["description"], height=110)
-                            e_url  = st.text_input("URL", value=sig.get("url",""))
-                            e_rel  = st.text_area("Fisheries relevance",
-                                                  value=sig.get("fisheries_relevance",""), height=80)
-                        if st.form_submit_button("💾 Save changes"):
-                            for s in st.session_state.signals:
-                                if s["id"] == sid:
-                                    s.update({"title": e_title, "description": e_desc,
-                                              "source": e_source, "url": e_url,
-                                              "date": e_date, "steep": e_steep,
-                                              "fisheries_relevance": e_rel, "status": e_status})
-                            save_signals(st.session_state.signals)
-                            st.session_state.editing_signal = None
-                            st.rerun()
-
-
-# ══════════════════════════════════════════════════════════════
-# TAB 5 — ANALYSIS
+# TAB 6 — ANALYSIS (hub)
 # ══════════════════════════════════════════════════════════════
 
 with tab_analysis:
-    st.markdown("### Analysis & Gap Overview")
+    st.markdown("<div class='lr-section-header'>📊 Analysis</div>", unsafe_allow_html=True)
 
-    with st.expander("ℹ️ How this tab works", expanded=False):
-        st.markdown("""
-This tab brings together all three search strategies to give you a live overview of:
-
-- **Review progress** — how far through the 720-paper screening you are
-- **STEEP gap analysis** — how the cross-sectoral megatrend literature compares to the fisheries
-  futures literature across Social, Technological, Economic, Environmental, and Political domains
-- **PRISMA counts** — the headline numbers for the PRISMA 2020 flow diagram
-- **Source type breakdown** — what kinds of sources are in the megatrend database
-
-The gap analysis is the central finding of the manuscript: fisheries futures research is
-dominated by environmental drivers (53%) and has zero technological entries, versus 28% for
-both in the cross-sectoral literature.
-""")
+    sub_nav = st.radio(
+        "analysis_sub",
+        ["Overview", "STEEP Gap", "Megatrends", "Signals", "Keywords"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
 
     excel_mtime_a = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
     mega_a = load_megatrends(excel_mtime_a)
     fish_a = load_fisheries_futures(excel_mtime_a)
     sigs_a = st.session_state.signals
 
-    # ── A — Review progress ────────────────────────────────────
-    st.markdown("#### Review progress")
-    n_total    = len(pool)
-    n_reviewed = int(pool["user_verdict"].str.strip().astype(bool).sum())
-    n_include  = int((pool["user_verdict"] == "include").sum())
-    n_unsure   = int((pool["user_verdict"] == "unsure").sum())
-    n_exclude  = int((pool["user_verdict"] == "exclude").sum())
-    n_pending  = n_total - n_reviewed
-    pct = n_reviewed / n_total * 100 if n_total > 0 else 0
+    # ── Overview ───────────────────────────────────────────────
+    if sub_nav == "Overview":
+        st.markdown("#### Review progress")
+        n_include = int((pool["user_verdict"] == "include").sum())
+        n_unsure  = int((pool["user_verdict"] == "unsure").sum())
+        n_exclude = int((pool["user_verdict"] == "exclude").sum())
+        n_pending = total - n_reviewed
+        pct = n_reviewed / total * 100 if total > 0 else 0
 
-    prog_cols = st.columns(6)
-    for col, label, val, color in zip(
-        prog_cols,
-        ["Total pool","Reviewed","Pending","✅ Included","⚠️ Unsure","❌ Excluded"],
-        [n_total, n_reviewed, n_pending, n_include, n_unsure, n_exclude],
-        ["#0d6efd","#6c757d","#fd7e14","#28a745","#fd7e14","#dc3545"],
-    ):
-        with col:
-            st.markdown(
-                f"<div style='text-align:center'>"
-                f"<div style='font-size:1.6rem;font-weight:700;color:{color}'>{val}</div>"
-                f"<div style='font-size:0.8rem;color:#555'>{label}</div></div>",
-                unsafe_allow_html=True,
-            )
-
-    st.progress(pct / 100, text=f"{pct:.1f}% screened ({n_reviewed} / {n_total})")
-
-    # ── B — STEEP gap analysis ─────────────────────────────────
-    st.markdown("---")
-    st.markdown("#### STEEP gap analysis")
-    st.caption("Percentage-point difference between cross-sectoral megatrends and fisheries futures literature.")
-
-    cats_5 = [c for c in STEEP_CATS if c != "Other"]
-
-    def steep_pct(df: pd.DataFrame) -> dict[str, float]:
-        if df.empty:
-            return {c: 0.0 for c in cats_5}
-        counts = df["steep"].value_counts()
-        total  = len(df)
-        return {c: round(counts.get(c, 0) / total * 100, 1) for c in cats_5}
-
-    mega_pct = steep_pct(mega_a)
-    fish_pct = steep_pct(fish_a)
-    gap_pct  = {c: round(mega_pct[c] - fish_pct[c], 1) for c in cats_5}
-
-    chart_cols = st.columns(3)
-
-    def make_bar(title, data_dict, colors):
-        df_c = pd.DataFrame({"STEEP": list(data_dict.keys()), "Pct": list(data_dict.values())})
-        fig  = px.bar(df_c, x="STEEP", y="Pct", color="STEEP",
-                      color_discrete_map=colors,
-                      text=df_c["Pct"].apply(lambda v: f"{v:.0f}%"),
-                      title=title, height=320)
-        fig.update_layout(showlegend=False, margin=dict(t=40, b=20),
-                          yaxis=dict(range=[0, 65], title="%"))
-        fig.update_traces(textposition="outside")
-        return fig
-
-    with chart_cols[0]:
-        st.plotly_chart(make_bar("Cross-sectoral megatrends", mega_pct, STEEP_COLORS),
-                        use_container_width=True)
-    with chart_cols[1]:
-        st.plotly_chart(make_bar("Fisheries futures literature", fish_pct, STEEP_COLORS),
-                        use_container_width=True)
-    with chart_cols[2]:
-        gap_colors = {c: ("#dc3545" if v >= 5 else "#28a745" if v <= -5 else "#adb5bd")
-                      for c, v in gap_pct.items()}
-        df_gap = pd.DataFrame({"STEEP": list(gap_pct.keys()), "Gap (pp)": list(gap_pct.values())})
-        fig_gap = px.bar(df_gap, x="STEEP", y="Gap (pp)", color="STEEP",
-                         color_discrete_map=gap_colors,
-                         text=df_gap["Gap (pp)"].apply(lambda v: f"{v:+.0f}pp"),
-                         title="Gap (megatrends − fisheries)", height=320)
-        fig_gap.update_layout(showlegend=False, margin=dict(t=40, b=20),
-                              yaxis=dict(title="Percentage points"))
-        fig_gap.update_traces(textposition="outside")
-        st.plotly_chart(fig_gap, use_container_width=True)
-
-    st.caption("🔴 Red = underrepresented in fisheries research  ·  🟢 Green = overrepresented")
-
-    gap_table = pd.DataFrame({
-        "STEEP":       cats_5,
-        "Megatrends %": [mega_pct[c] for c in cats_5],
-        "Fisheries %":  [fish_pct[c] for c in cats_5],
-        "Gap (pp)":     [gap_pct[c]  for c in cats_5],
-    })
-    st.dataframe(gap_table, use_container_width=True, hide_index=True,
-                 column_config={"Gap (pp)": st.column_config.NumberColumn(format="%.1f")})
-
-    # ── C — PRISMA counts ──────────────────────────────────────
-    st.markdown("---")
-    st.markdown("#### PRISMA flow counts")
-
-    pr1, pr2, pr3 = st.columns(3)
-    with pr1:
-        st.markdown("**Strategy 1 — peer-reviewed (automated)**")
-        st.metric("OpenAlex records retrieved", "2,100")
-        st.metric("After deduplication", "1,621")
-        st.metric("Passed title/abstract screen", "720")
-        st.metric("Pending full-text review", n_pending)
-        st.metric("Reviewed", n_reviewed)
-        st.metric("Included", n_include)
-    with pr2:
-        st.markdown("**Strategy 1 — peer-reviewed (manual)**")
-        st.metric("Manual inclusions", "60")
-        st.markdown("**Strategy 2 — cross-sectoral**")
-        st.metric("Megatrend entries (Excel)", len(mega_a))
-    with pr3:
-        st.markdown("**Strategy 3 — signals**")
-        st.metric("Signals documented", len(sigs_a))
-        st.markdown("**Combined**")
-        st.metric("Total sources (all strategies)", 60 + len(mega_a) + len(sigs_a))
-
-    # ── D — Source type breakdown ──────────────────────────────
-    st.markdown("---")
-    st.markdown("#### Source type breakdown (cross-sectoral megatrends)")
-    type_counts = (
-        mega_a["source_type"]
-        .value_counts()
-        .reset_index()
-    )
-    type_counts.columns = ["Source type", "Count"]
-    fig_pie = px.pie(type_counts, names="Source type", values="Count",
-                     color_discrete_sequence=px.colors.qualitative.Set2,
-                     height=350)
-    fig_pie.update_layout(margin=dict(t=20, b=20))
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-
-# ══════════════════════════════════════════════════════════════
-# TAB 6 — KEYWORDS
-# ══════════════════════════════════════════════════════════════
-
-with tab_keywords:
-    st.markdown("### Keyword Configuration")
-
-    with st.expander("ℹ️ How keyword scoring works", expanded=False):
-        st.markdown("""
-**The scoring system classifies each paper as green / orange / red based on two scores:**
-
-| Score | How it's calculated | Max |
-|-------|---------------------|-----|
-| 🐟 **Fisheries score** | strong hits ×3 + medium hits ×2 + context hits ×1 | 8 |
-| 🔭 **Future score** | strong hits ×4 + medium hits ×2 + weak hits ×1 | 10 |
-
-A "hit" means the keyword (or phrase) appears anywhere in the title or abstract (case-insensitive).
-
-**Green / Orange / Red decision rules:**
-
-| Verdict | Condition |
-|---------|-----------|
-| 🟢 GREEN | (fish ≥ 4 and future ≥ 6, no retro hits) OR (fish ≥ 3 and future ≥ 4, no retro) OR (fish ≥ 2 and future ≥ 6) |
-| 🔴 RED | fish = 0, OR (future = 0 and a retrospective hit), OR (biology-only hit with fish ≤ 2 and future < 2) |
-| 🟠 ORANGE | Everything else — borderline or abstract missing |
-
-**Exclusion lists** act as hard overrides:
-- **Retrospective** — if the paper has no future orientation AND a retrospective term → red
-- **Biology-only** — genomics/genetics focus without fisheries futures context → red
-- **Non-fisheries** — agriculture, livestock etc. with no fisheries signal → red
-
-**Editing keywords**
-- Click any cell to edit a keyword in place.
-- Click the **+** row at the bottom of a table to add a new keyword.
-- Select a row (checkbox on the left) and press `Delete` / `Backspace` to remove it.
-- Changes apply instantly to the Review tab scoring.
-- Click **Save to file** to persist changes across sessions.
-- Click **Reset to defaults** to restore the original keyword lists.
-
-> **Tip:** If good papers are being scored red, check which fisheries/future keywords they lack and add them to the medium or context lists. If too many irrelevant papers are green, strengthen the exclusion lists.
-""")
-
-    st.markdown(
-        "Edit, add, or delete keywords. Changes apply instantly to scoring in the Review tab. "
-        "Click **Save to file** to persist across sessions."
-    )
-
-    kw_changed = False
-    new_kw     = {}
-
-    groups = [
-        ("🐟 Fisheries relevance", ["fish_strong", "fish_med", "fish_context"]),
-        ("🔭 Future orientation",  ["future_strong", "future_med", "future_weak"]),
-        ("🚫 Exclusion criteria",  ["excl_retro", "excl_bio", "excl_nonfish"]),
-    ]
-
-    for group_label, keys in groups:
-        st.markdown(f"#### {group_label}")
-        cols = st.columns(len(keys))
-        for col, key in zip(cols, keys):
-            label, weight, color = KEYWORD_META[key]
+        prog_cols = st.columns(6)
+        for col, label, val, color in zip(
+            prog_cols,
+            ["Total pool","Reviewed","Pending","✅ Included","⚠️ Unsure","❌ Excluded"],
+            [total, n_reviewed, n_pending, n_include, n_unsure, n_exclude],
+            ["#0d6efd","#6c757d","#fd7e14","#28a745","#fd7e14","#dc3545"],
+        ):
             with col:
                 st.markdown(
-                    f"<div style='color:{color};font-weight:600;margin-bottom:2px'>{label}</div>"
-                    f"<div style='font-size:0.75rem;color:#888;margin-bottom:6px'>{weight}</div>",
+                    f"<div style='text-align:center'>"
+                    f"<div style='font-size:1.6rem;font-weight:700;color:{color}'>{val}</div>"
+                    f"<div style='font-size:0.8rem;color:#555'>{label}</div></div>",
                     unsafe_allow_html=True,
                 )
-                edited = st.data_editor(
-                    pd.DataFrame({"keyword": kw.get(key, [])}),
-                    num_rows="dynamic",
-                    use_container_width=True,
-                    hide_index=True,
-                    key=f"de_{key}",
-                    column_config={
-                        "keyword": st.column_config.TextColumn(
-                            "Keyword / phrase",
-                            help="Lowercase. Matched anywhere in title + abstract.",
-                            max_chars=120,
+        st.progress(pct / 100, text=f"{pct:.1f}% screened ({n_reviewed} / {total})")
+
+        st.markdown("---")
+        st.markdown("#### PRISMA counts")
+        strategy_o = load_search_strategy()
+        s1o = strategy_o.get("strategy1", {})
+        pr1, pr2, pr3 = st.columns(3)
+        with pr1:
+            st.markdown("**Strategy 1 — automated**")
+            for label, val in [
+                ("Retrieved", s1o.get("n_retrieved","?")),
+                ("After dedup", s1o.get("n_deduped","?")),
+                ("Screened", s1o.get("n_screened","?")),
+                ("In pool", total),
+                ("Reviewed", n_reviewed),
+                ("Included", n_include),
+            ]:
+                st.metric(label, val)
+        with pr2:
+            st.markdown("**Strategy 1 — manual**")
+            st.metric("Manual inclusions", s1o.get("n_manual","?"))
+            st.markdown("**Strategy 2**")
+            st.metric("Megatrend entries", len(mega_a))
+        with pr3:
+            st.markdown("**Strategy 3**")
+            st.metric("Signals documented", len(sigs_a))
+            st.markdown("**Combined**")
+            st.metric("Total sources", s1o.get("n_manual",0) + len(mega_a) + len(sigs_a))
+
+        st.markdown("---")
+        st.markdown("#### Source type breakdown (cross-sectoral megatrends)")
+        type_counts = mega_a["source_type"].value_counts().reset_index()
+        type_counts.columns = ["Source type", "Count"]
+        fig_pie = px.pie(type_counts, names="Source type", values="Count",
+                         color_discrete_sequence=px.colors.qualitative.Set2, height=350)
+        fig_pie.update_layout(margin=dict(t=20, b=20))
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+    # ── STEEP Gap ──────────────────────────────────────────────
+    elif sub_nav == "STEEP Gap":
+        st.markdown("#### STEEP gap analysis")
+        st.caption("Percentage-point difference between cross-sectoral megatrends and fisheries futures literature.")
+
+        cats_5 = [c for c in STEEP_CATS if c != "Other"]
+
+        def steep_pct(df: pd.DataFrame) -> dict:
+            if df.empty:
+                return {c: 0.0 for c in cats_5}
+            counts = df["steep"].value_counts()
+            t = len(df)
+            return {c: round(counts.get(c, 0) / t * 100, 1) for c in cats_5}
+
+        mega_pct = steep_pct(mega_a)
+        fish_pct = steep_pct(fish_a)
+        gap_pct  = {c: round(mega_pct[c] - fish_pct[c], 1) for c in cats_5}
+
+        chart_cols = st.columns(3)
+
+        def make_bar(title, data_dict, colors):
+            df_c = pd.DataFrame({"STEEP": list(data_dict.keys()), "Pct": list(data_dict.values())})
+            fig  = px.bar(df_c, x="STEEP", y="Pct", color="STEEP",
+                          color_discrete_map=colors,
+                          text=df_c["Pct"].apply(lambda v: f"{v:.0f}%"),
+                          title=title, height=320)
+            fig.update_layout(showlegend=False, margin=dict(t=40,b=20),
+                              yaxis=dict(range=[0,65], title="%"))
+            fig.update_traces(textposition="outside")
+            return fig
+
+        with chart_cols[0]:
+            st.plotly_chart(make_bar("Cross-sectoral megatrends", mega_pct, STEEP_COLORS),
+                            use_container_width=True)
+        with chart_cols[1]:
+            st.plotly_chart(make_bar("Fisheries futures literature", fish_pct, STEEP_COLORS),
+                            use_container_width=True)
+        with chart_cols[2]:
+            gap_colors = {c: ("#dc3545" if v >= 5 else "#28a745" if v <= -5 else "#adb5bd")
+                          for c, v in gap_pct.items()}
+            df_gap = pd.DataFrame({"STEEP": list(gap_pct.keys()), "Gap (pp)": list(gap_pct.values())})
+            fig_gap = px.bar(df_gap, x="STEEP", y="Gap (pp)", color="STEEP",
+                             color_discrete_map=gap_colors,
+                             text=df_gap["Gap (pp)"].apply(lambda v: f"{v:+.0f}pp"),
+                             title="Gap (megatrends − fisheries)", height=320)
+            fig_gap.update_layout(showlegend=False, margin=dict(t=40,b=20),
+                                  yaxis=dict(title="Percentage points"))
+            fig_gap.update_traces(textposition="outside")
+            st.plotly_chart(fig_gap, use_container_width=True)
+
+        st.caption("🔴 Red = underrepresented in fisheries research  ·  🟢 Green = overrepresented")
+        gap_table = pd.DataFrame({
+            "STEEP":        cats_5,
+            "Megatrends %": [mega_pct[c] for c in cats_5],
+            "Fisheries %":  [fish_pct[c] for c in cats_5],
+            "Gap (pp)":     [gap_pct[c]  for c in cats_5],
+        })
+        st.dataframe(gap_table, use_container_width=True, hide_index=True,
+                     column_config={"Gap (pp)": st.column_config.NumberColumn(format="%.1f")})
+
+    # ── Megatrends ─────────────────────────────────────────────
+    elif sub_nav == "Megatrends":
+        st.markdown("#### Cross-sectoral Megatrends & Drivers")
+        st.caption("Strategy 2 — `data/manual_literature_search.xlsx`")
+
+        f1, f2, f3 = st.columns([2, 2, 3])
+        with f1:
+            steep_filter = st.multiselect("STEEP category", STEEP_CATS, default=STEEP_CATS, key="mega_steep")
+        with f2:
+            all_types = sorted(mega_a["source_type"].dropna().unique().tolist())
+            type_filter = st.multiselect("Source type", all_types, default=all_types, key="mega_type")
+        with f3:
+            text_search = st.text_input("Search trends", key="mega_search", placeholder="Type to filter…")
+
+        filtered = mega_a[mega_a["steep"].isin(steep_filter) & mega_a["source_type"].isin(type_filter)]
+        if text_search:
+            mask_m = (filtered["trend"].str.contains(text_search, case=False, na=False) |
+                      filtered["details"].str.contains(text_search, case=False, na=False))
+            filtered = filtered[mask_m]
+
+        st.caption(f"Showing **{len(filtered)}** of {len(mega_a)} entries")
+
+        steep_counts = (filtered["steep"].value_counts()
+                        .reindex(STEEP_CATS, fill_value=0).reset_index())
+        steep_counts.columns = ["STEEP","Count"]
+        steep_counts["Pct"] = (steep_counts["Count"] / max(len(filtered),1) * 100).round(1)
+        fig_mega = px.bar(steep_counts, x="STEEP", y="Count", color="STEEP",
+                          color_discrete_map=STEEP_COLORS,
+                          text=steep_counts["Pct"].apply(lambda v: f"{v:.0f}%"),
+                          title="STEEP distribution — cross-sectoral megatrends", height=300)
+        fig_mega.update_layout(showlegend=False, margin=dict(t=40,b=20))
+        fig_mega.update_traces(textposition="outside")
+        st.plotly_chart(fig_mega, use_container_width=True)
+
+        display_cols = ["trend","steep","source_type","year","author","source"]
+        st.dataframe(
+            filtered[[c for c in display_cols if c in filtered.columns]],
+            use_container_width=True, height=380,
+            column_config={
+                "trend":       st.column_config.TextColumn("Trend / Driver", width="large"),
+                "steep":       st.column_config.TextColumn("STEEP", width="small"),
+                "source_type": st.column_config.TextColumn("Type", width="small"),
+                "year":        st.column_config.NumberColumn("Year", format="%d", width="small"),
+                "author":      st.column_config.TextColumn("Author", width="medium"),
+                "source":      st.column_config.LinkColumn("Source", width="medium"),
+            },
+        )
+
+        st.markdown("---")
+        with st.expander("➕ Add new megatrend entry", expanded=False):
+            with st.form("add_mega_form", clear_on_submit=True):
+                ac1, ac2 = st.columns(2)
+                with ac1:
+                    new_trend   = st.text_input("Trend / driver label *")
+                    new_author  = st.text_input("Author(s)")
+                    new_year    = st.number_input("Year", min_value=1990, max_value=2030, value=2024, step=1)
+                with ac2:
+                    new_details = st.text_area("Details / description", height=100)
+                    new_source  = st.text_input("Source URL or name")
+                    new_stype   = st.selectbox("Source type",
+                        ["Article","Consultancy","Government","NGO / Think Tank",
+                         "Book / Chapter","Business","Unclassified"])
+                new_title    = st.text_input("Publication title")
+                new_comments = st.text_area("Comments", height=60)
+                if st.form_submit_button("💾 Save entry", type="primary"):
+                    if not new_trend.strip():
+                        st.error("Trend label is required.")
+                    else:
+                        add_megatrend_to_excel({
+                            "trend": new_trend, "details": new_details,
+                            "author": new_author, "source": new_source,
+                            "title": new_title, "comments": new_comments,
+                            "doi": "", "year": int(new_year), "source_type": new_stype,
+                        })
+                        st.success(f"Entry '{new_trend}' added.")
+                        st.rerun()
+
+    # ── Signals ────────────────────────────────────────────────
+    elif sub_nav == "Signals":
+        st.markdown("#### Weak & Emerging Signals")
+        st.caption("Strategy 3 — `data/signals.json`")
+
+        signals = st.session_state.signals
+        STATUS_COLORS = {"Monitoring":"#fd7e14","Confirmed":"#28a745","Dismissed":"#6c757d"}
+
+        with st.expander("➕ Add new signal", expanded=(len(signals)==0)):
+            with st.form("add_signal_form", clear_on_submit=True):
+                s1c, s2c = st.columns(2)
+                with s1c:
+                    sig_title  = st.text_input("Signal title *")
+                    sig_source = st.text_input("Source name")
+                    sig_date   = st.text_input("Date observed (YYYY-MM-DD)",
+                                               value=datetime.today().strftime("%Y-%m-%d"))
+                    sig_steep  = st.selectbox("STEEP category", STEEP_CATS)
+                    sig_status = st.selectbox("Status", ["Monitoring","Confirmed","Dismissed"])
+                with s2c:
+                    sig_desc  = st.text_area("Description *", height=110,
+                        placeholder="What is happening? Why might it matter?")
+                    sig_url   = st.text_input("Source URL")
+                    sig_rel   = st.text_area("Fisheries relevance", height=80)
+                if st.form_submit_button("💾 Save signal", type="primary"):
+                    if not sig_title.strip() or not sig_desc.strip():
+                        st.error("Title and description are required.")
+                    else:
+                        new_id = max((s["id"] for s in signals), default=0) + 1
+                        signals.append({
+                            "id": new_id, "title": sig_title, "description": sig_desc,
+                            "source": sig_source, "url": sig_url, "date": sig_date,
+                            "steep": sig_steep, "fisheries_relevance": sig_rel,
+                            "status": sig_status,
+                        })
+                        st.session_state.signals = signals
+                        save_signals(signals)
+                        st.success(f"Signal '{sig_title}' saved.")
+                        st.rerun()
+
+        st.markdown("---")
+        if not signals:
+            st.info("No signals documented yet.")
+        else:
+            st.markdown(f"**{len(signals)} signal{'s' if len(signals)!=1 else ''} documented**")
+            for sig in signals:
+                sid      = sig["id"]
+                s_color  = STEEP_COLORS.get(sig["steep"], "#999")
+                st_color = STATUS_COLORS.get(sig["status"], "#999")
+                is_editing = (st.session_state.editing_signal == sid)
+                with st.container(border=True):
+                    h1, h2 = st.columns([5,1])
+                    with h1:
+                        st.markdown(
+                            f"<span style='background:{s_color};color:white;padding:2px 8px;"
+                            f"border-radius:4px;font-size:0.8rem'>{sig['steep']}</span>&nbsp;&nbsp;"
+                            f"**{sig['title']}**&nbsp;&nbsp;"
+                            f"<span style='color:#888;font-size:0.85rem'>{sig.get('date','')}</span>",
+                            unsafe_allow_html=True,
                         )
-                    },
-                )
-                parsed = [v.strip().lower() for v in edited["keyword"].dropna() if str(v).strip()]
-                new_kw[key] = parsed
-                if parsed != kw.get(key):
-                    kw_changed = True
-        st.markdown("")
+                    with h2:
+                        b1, b2 = st.columns(2)
+                        with b1:
+                            if st.button("✏️", key=f"edit_sig_{sid}"):
+                                st.session_state.editing_signal = None if is_editing else sid
+                                st.rerun()
+                        with b2:
+                            if st.button("🗑", key=f"del_sig_{sid}"):
+                                st.session_state.signals = [s for s in signals if s["id"]!=sid]
+                                save_signals(st.session_state.signals)
+                                st.rerun()
 
-    if kw_changed:
-        st.session_state.kw = new_kw
+                    if not is_editing:
+                        st.markdown(sig["description"])
+                        if sig.get("fisheries_relevance"):
+                            st.caption(f"*Fisheries relevance:* {sig['fisheries_relevance']}")
+                        foot1, foot2 = st.columns([3,1])
+                        with foot1:
+                            if sig.get("url"):
+                                st.markdown(f"[{sig.get('source') or sig['url']}]({sig['url']})")
+                            elif sig.get("source"):
+                                st.caption(sig["source"])
+                        with foot2:
+                            st.markdown(
+                                f"<div style='text-align:right;color:{st_color};font-size:0.85rem'>● {sig['status']}</div>",
+                                unsafe_allow_html=True,
+                            )
+                    else:
+                        with st.form(f"edit_sig_{sid}_form", clear_on_submit=False):
+                            e1, e2 = st.columns(2)
+                            with e1:
+                                e_title  = st.text_input("Title",  value=sig["title"])
+                                e_source = st.text_input("Source", value=sig.get("source",""))
+                                e_date   = st.text_input("Date",   value=sig.get("date",""))
+                                e_steep  = st.selectbox("STEEP",   STEEP_CATS,
+                                    index=STEEP_CATS.index(sig["steep"]) if sig["steep"] in STEEP_CATS else 0)
+                                e_status = st.selectbox("Status",  ["Monitoring","Confirmed","Dismissed"],
+                                    index=["Monitoring","Confirmed","Dismissed"].index(sig["status"]))
+                            with e2:
+                                e_desc = st.text_area("Description", value=sig["description"], height=110)
+                                e_url  = st.text_input("URL",  value=sig.get("url",""))
+                                e_rel  = st.text_area("Fisheries relevance",
+                                                      value=sig.get("fisheries_relevance",""), height=80)
+                            if st.form_submit_button("💾 Save changes"):
+                                for s in st.session_state.signals:
+                                    if s["id"] == sid:
+                                        s.update({"title":e_title,"description":e_desc,
+                                                  "source":e_source,"url":e_url,"date":e_date,
+                                                  "steep":e_steep,"fisheries_relevance":e_rel,
+                                                  "status":e_status})
+                                save_signals(st.session_state.signals)
+                                st.session_state.editing_signal = None
+                                st.rerun()
+
+    # ── Keywords ───────────────────────────────────────────────
+    elif sub_nav == "Keywords":
+        st.markdown("#### Keyword Configuration")
+        st.caption("Edit keyword lists used for AI pre-screening. Changes apply instantly to Review tab scoring.")
+
+        kw_changed = False
+        new_kw     = {}
+        groups = [
+            ("🐟 Fisheries relevance", ["fish_strong","fish_med","fish_context"]),
+            ("🔭 Future orientation",  ["future_strong","future_med","future_weak"]),
+            ("🚫 Exclusion criteria",  ["excl_retro","excl_bio","excl_nonfish"]),
+        ]
+        for group_label, keys in groups:
+            st.markdown(f"#### {group_label}")
+            cols = st.columns(len(keys))
+            for col, key in zip(cols, keys):
+                label, weight, color = KEYWORD_META[key]
+                with col:
+                    st.markdown(
+                        f"<div style='color:{color};font-weight:600;margin-bottom:2px'>{label}</div>"
+                        f"<div style='font-size:0.75rem;color:#888;margin-bottom:6px'>{weight}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    edited = st.data_editor(
+                        pd.DataFrame({"keyword": kw.get(key, [])}),
+                        num_rows="dynamic", use_container_width=True,
+                        hide_index=True, key=f"de_{key}",
+                        column_config={"keyword": st.column_config.TextColumn("Keyword / phrase", max_chars=120)},
+                    )
+                    parsed = [v.strip().lower() for v in edited["keyword"].dropna() if str(v).strip()]
+                    new_kw[key] = parsed
+                    if parsed != kw.get(key):
+                        kw_changed = True
+            st.markdown("")
+
+        if kw_changed:
+            st.session_state.kw = new_kw
+
+        st.markdown("---")
+        act_l, act_r, _ = st.columns([1, 1, 3])
+        with act_l:
+            if st.button("💾 Save to file", use_container_width=True):
+                save_keywords(st.session_state.kw)
+                st.success(f"Saved → {KW_FILE.name}")
+        with act_r:
+            if st.button("↺ Reset to defaults", use_container_width=True):
+                for key in DEFAULT_KW:
+                    st.session_state.pop(f"de_{key}", None)
+                st.session_state.kw = {k: list(v) for k, v in DEFAULT_KW.items()}
+                st.rerun()
+
+
+# ══════════════════════════════════════════════════════════════
+# TAB 7 — OUTPUTS
+# ══════════════════════════════════════════════════════════════
+
+with tab_outputs:
+    st.markdown("<div class='lr-section-header'>📤 Outputs</div>", unsafe_allow_html=True)
+
+    article_o  = load_article_structure()
+    sections_o = load_sections()
+
+    # ── Manuscript ────────────────────────────────────────────
+    st.markdown("#### Manuscript (Word)")
+    sec_status = []
+    for s in article_o.get("sections", []):
+        text = sections_o.get(s["id"], "")
+        wc   = len(text.split()) if text.strip() else 0
+        sec_status.append({
+            "Section": s["title"],
+            "Words":   wc,
+            "Target":  s["target_words"],
+            "Status":  "✓" if wc >= s["target_words"] * 0.5 else "draft" if wc > 0 else "empty",
+        })
+
+    st.dataframe(pd.DataFrame(sec_status), use_container_width=True, hide_index=True,
+                 column_config={
+                     "Words":  st.column_config.NumberColumn(format="%d"),
+                     "Target": st.column_config.NumberColumn(format="%d"),
+                 })
+
+    out_c1, out_c2 = st.columns(2)
+    with out_c1:
+        if st.button("⚙️ Generate manuscript", type="primary", use_container_width=True):
+            with st.spinner("Building Word document…"):
+                docx_bytes = generate_manuscript_bytes(article_o, sections_o)
+            if docx_bytes:
+                st.session_state["manuscript_bytes"] = docx_bytes
+                st.success("Manuscript generated. Click download below.")
+            else:
+                st.error("Could not generate document — ensure python-docx is installed.")
+
+    with out_c2:
+        mb = st.session_state.get("manuscript_bytes", b"")
+        st.download_button(
+            "⬇️ Download Manuscript (DOCX)",
+            data=mb,
+            file_name="Manuscript_Trends_2026.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            disabled=(not mb),
+            use_container_width=True,
+        )
+
+    # ── Also save to docs/ ─────────────────────────────────────
+    if st.session_state.get("manuscript_bytes"):
+        if st.button("💾 Save to docs/Manuscript_Trends_2026.docx"):
+            out_path = DOCS_DIR / "Manuscript_Trends_2026.docx"
+            out_path.write_bytes(st.session_state["manuscript_bytes"])
+            st.success(f"Saved to {out_path}")
 
     st.markdown("---")
-    act_l, act_r, _ = st.columns([1, 1, 3])
-    with act_l:
-        if st.button("💾 Save to file", use_container_width=True):
-            save_keywords(st.session_state.kw)
-            st.success(f"Saved → {KW_FILE.name}")
-    with act_r:
-        if st.button("↺ Reset to defaults", use_container_width=True):
-            for key in DEFAULT_KW:
-                st.session_state.pop(f"de_{key}", None)
-            st.session_state.kw = {k: list(v) for k, v in DEFAULT_KW.items()}
-            st.rerun()
+
+    # ── PRISMA diagram ─────────────────────────────────────────
+    st.markdown("#### PRISMA Diagram")
+    prisma_script = BASE / "analysis" / "generate_prisma.py"
+    prisma_svg    = DOCS_DIR / "PRISMA_flow.svg"
+    prisma_png    = DOCS_DIR / "PRISMA_flow.png"
+
+    if prisma_script.exists():
+        if st.button("⚙️ Generate PRISMA diagram", use_container_width=True):
+            with st.spinner("Running generate_prisma.py…"):
+                try:
+                    result = subprocess.run(
+                        [sys.executable, str(prisma_script)],
+                        capture_output=True, text=True, cwd=str(BASE), timeout=60,
+                    )
+                    if result.returncode == 0:
+                        st.success("PRISMA diagram generated.")
+                    else:
+                        st.error(f"Script error:\n{result.stderr[:500]}")
+                except Exception as e:
+                    st.error(str(e))
+
+    dl1, dl2 = st.columns(2)
+    with dl1:
+        if prisma_svg.exists():
+            st.download_button("⬇️ PRISMA SVG", data=prisma_svg.read_bytes(),
+                               file_name="PRISMA_flow.svg", mime="image/svg+xml",
+                               use_container_width=True)
+        else:
+            st.caption("PRISMA SVG not yet generated.")
+    with dl2:
+        if prisma_png.exists():
+            st.download_button("⬇️ PRISMA PNG", data=prisma_png.read_bytes(),
+                               file_name="PRISMA_flow.png", mime="image/png",
+                               use_container_width=True)
+        else:
+            st.caption("PRISMA PNG not yet generated.")
 
     st.markdown("---")
-    st.markdown("**Scoring thresholds**")
-    st.markdown("""
-| Verdict | Condition |
-|---------|-----------|
-| 🟢 GREEN | fish ≥ 4 + future ≥ 6 (no retro), OR fish ≥ 3 + future ≥ 4 (no retro), OR fish ≥ 2 + future ≥ 6 |
-| 🟠 ORANGE | Borderline or missing abstract |
-| 🔴 RED | fish = 0, OR (future = 0 + retro hit), OR (bio hit + fish ≤ 2 + future < 2) |
 
-Fisheries score = strong×3 + medium×2 + context×1, capped at 8.
-Future score = strong×4 + medium×2 + weak×1, capped at 10.
-""")
+    # ── Data exports ───────────────────────────────────────────
+    st.markdown("#### Data exports")
+    ex1, ex2, ex3, ex4 = st.columns(4)
+    with ex1:
+        st.download_button(
+            "⬇️ Review pool (CSV)",
+            data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
+            file_name="full_text_review.csv", mime="text/csv",
+            use_container_width=True,
+        )
+    with ex2:
+        n_inc_dl = int((pool["user_verdict"]=="include").sum())
+        bib_dl   = _cached_bibtex("Included papers", pool_mtime) if n_inc_dl > 0 else b""
+        st.download_button(
+            f"⬇️ BibTeX — included ({n_inc_dl})",
+            data=bib_dl, file_name="included_references.bib", mime="text/plain",
+            disabled=(n_inc_dl == 0), use_container_width=True,
+        )
+    with ex3:
+        signals_json = json.dumps(st.session_state.signals, indent=2, ensure_ascii=False).encode("utf-8")
+        st.download_button(
+            f"⬇️ Signals JSON ({len(st.session_state.signals)})",
+            data=signals_json, file_name="signals.json", mime="application/json",
+            use_container_width=True,
+        )
+    with ex4:
+        if EXCEL_FILE.exists():
+            st.download_button(
+                "⬇️ Megatrends (Excel)",
+                data=EXCEL_FILE.read_bytes(),
+                file_name="manual_literature_search.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
+        else:
+            st.caption("Excel file not found.")
