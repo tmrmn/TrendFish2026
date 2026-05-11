@@ -1379,15 +1379,10 @@ with tab_search:
     rows_to_delete = None
     for i, row in enumerate(st.session_state.search_rows):
         rid = row["id"]
+        c_op, c_term, c_del = st.columns([0.9, 4.7, 0.5])
         if i == 0:
-            c_label, c_term, c_del = st.columns([0.6, 5, 0.5])
-            with c_label:
-                st.markdown(
-                    "<div style='text-align:right;padding-top:34px;color:#888;font-size:0.85rem'>Find</div>",
-                    unsafe_allow_html=True,
-                )
+            c_op.empty()
         else:
-            c_op, c_term, c_del = st.columns([0.9, 4.7, 0.5])
             with c_op:
                 new_op = st.selectbox(
                     "op", ["AND", "OR", "NOT"],
