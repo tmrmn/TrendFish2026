@@ -1604,6 +1604,12 @@ with tab_review:
         n_needs_enrich = n_with_doi - n_with_pdf
 
         st.markdown("---")
+        st.markdown("**Fetch open-access links**")
+        st.caption(
+            "Queries Unpaywall for each paper with a DOI and stores a direct PDF link. "
+            "Once fetched, a **📄 Open PDF ↗** button will appear in the Manual screening tab "
+            "so you can open the full text while reviewing."
+        )
         enrich_col, enrich_info = st.columns([1, 2])
         with enrich_col:
             enrich_btn = st.button("🔗 Fetch open-access links",
