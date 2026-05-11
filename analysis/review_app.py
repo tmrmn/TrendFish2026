@@ -986,7 +986,7 @@ with tab_article:
             with a1:
                 new_title   = st.text_input("Title", value=article.get("title",""))
                 new_journal = st.text_input("Target journal", value=article.get("target_journal",""))
-                new_max_wc  = st.number_input("Word budget / target words total", min_value=1000, max_value=30000,
+                new_max_wc  = st.number_input("Word budget", min_value=1000, max_value=30000,
                                               value=int(article.get("max_words", 12000)), step=500)
             with a2:
                 new_subtitle = st.text_input("Subtitle", value=article.get("subtitle",""))
@@ -1048,15 +1048,18 @@ with tab_article:
                 "actual_words": actual_wc,
             })
         sec_df = pd.DataFrame(sec_rows)
-        total_actual = int(sec_df["actual_words"].sum()) if not sec_df.empty else 0
-        max_words    = int(article.get("max_words", 12000))
-        pct_used     = min(total_actual / max_words, 1.0) if max_words else 0
+        total_actual   = int(sec_df["actual_words"].sum()) if not sec_df.empty else 0
+        total_planned  = int(sec_df["target_words"].sum()) if not sec_df.empty else 0
+        max_words      = int(article.get("max_words", 12000))
+        pct_used       = min(total_actual / max_words, 1.0) if max_words else 0
 
-        mc1, mc2 = st.columns(2)
+        mc1, mc2, mc3 = st.columns(3)
         with mc1:
             st.metric("Total words written", total_actual)
         with mc2:
-            st.metric("Word budget / target words total", max_words)
+            st.metric("Planned words", total_planned)
+        with mc3:
+            st.metric("Word budget", max_words)
         st.progress(pct_used, text=f"{total_actual:,} / {max_words:,} words ({pct_used*100:.0f}%)")
 
         st.markdown("**Section outline** — edit target word counts below and save.")
