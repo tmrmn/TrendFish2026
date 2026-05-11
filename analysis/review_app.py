@@ -1962,7 +1962,7 @@ with tab_analysis:
             ("Retrieved",         s1o.get("n_retrieved", "?")),
             ("After dedup",       s1o.get("n_deduped",   "?")),
             ("In pool",           total),
-            ("Reviewed",          n_reviewed),
+            ("Screened",          n_reviewed),
             ("Included",          n_include),
         ]):
             with col: st.metric(label, val)
