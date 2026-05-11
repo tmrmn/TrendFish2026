@@ -1235,7 +1235,7 @@ with tab_strategy:
     strategy = load_search_strategy()
 
     strat_sub = st.radio(
-        "view", ["📚 Strategy 1", "🌍 Strategy 2", "📡 Strategy 3", "📊 PRISMA Summary"],
+        "view", ["📚 Strategy 1", "🌍 Strategy 2", "📡 Strategy 3"],
         horizontal=True, label_visibility="collapsed",
     )
 
@@ -1329,35 +1329,6 @@ with tab_strategy:
                 save_search_strategy(strategy)
                 st.success("Strategy 3 saved.")
 
-    # ── PRISMA summary ─────────────────────────────────────────
-    else:
-        st.markdown("**PRISMA flow summary (live)**")
-        s1_data  = strategy.get("strategy1", {})
-        excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
-        mega_cnt = len(load_megatrends(excel_mt))
-        sig_cnt  = len(st.session_state.signals)
-        n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
-
-        pc1, pc2, pc3 = st.columns(3)
-        with pc1:
-            st.markdown("**Strategy 1 — automated**")
-            for label, val in [
-                ("Retrieved", s1_data.get("n_retrieved", "?")),
-                ("After dedup", s1_data.get("n_deduped", "?")),
-                ("Screened", s1_data.get("n_screened", "?")),
-                ("In pool", total),
-                ("Reviewed", n_reviewed),
-                ("Included", n_inc),
-            ]:
-                st.metric(label, val)
-        with pc2:
-            st.markdown("**Strategy 1 — manual**")
-            st.metric("Manual inclusions", s1_data.get("n_manual", "?"))
-            st.markdown("**Strategy 2**")
-            st.metric("Megatrend entries", mega_cnt)
-        with pc3:
-            st.markdown("**Strategy 3**")
-            st.metric("Signals documented", sig_cnt)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1624,6 +1595,38 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
                 f"Excluded: **{int((pool['user_verdict']=='exclude').sum())}**  ·  "
                 f"Unreviewed: **{int((pool['user_verdict'].str.strip()=='').sum())}**"
             )
+
+
+    # ── PRISMA flow summary ────────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### PRISMA flow summary (live)")
+    _pr_strategy = load_search_strategy()
+    _pr_s1       = _pr_strategy.get("strategy1", {})
+    _pr_excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+    _pr_mega_cnt = len(load_megatrends(_pr_excel_mt))
+    _pr_sig_cnt  = len(st.session_state.signals)
+    _pr_n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
+
+    pc1, pc2, pc3 = st.columns(3)
+    with pc1:
+        st.markdown("**Strategy 1 — automated**")
+        for label, val in [
+            ("Retrieved",  _pr_s1.get("n_retrieved", "?")),
+            ("After dedup",_pr_s1.get("n_deduped",   "?")),
+            ("Screened",   _pr_s1.get("n_screened",   "?")),
+            ("In pool",    total),
+            ("Reviewed",   n_reviewed),
+            ("Included",   _pr_n_inc),
+        ]:
+            st.metric(label, val)
+    with pc2:
+        st.markdown("**Strategy 1 — manual**")
+        st.metric("Manual inclusions", _pr_s1.get("n_manual", "?"))
+        st.markdown("**Strategy 2**")
+        st.metric("Megatrend entries", _pr_mega_cnt)
+    with pc3:
+        st.markdown("**Strategy 3**")
+        st.metric("Signals documented", _pr_sig_cnt)
 
 
 # ══════════════════════════════════════════════════════════════
