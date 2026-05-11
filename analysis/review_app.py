@@ -996,6 +996,7 @@ with tab_article:
                     "orcid":       st.column_config.TextColumn("ORCID"),
                 },
             )
+            st.caption("To remove a row: select its checkbox on the left, then press Delete.")
 
             st.markdown("**Keywords**")
             kw_df = pd.DataFrame({"keyword": article.get("keywords", [])})
@@ -1003,6 +1004,7 @@ with tab_article:
                 kw_df, num_rows="dynamic", use_container_width=True, key="keywords_de",
                 column_config={"keyword": st.column_config.TextColumn("Keyword")},
             )
+            st.caption("To remove a row: select its checkbox on the left, then press Delete.")
 
             st.markdown("**Research questions**")
             rq_df = pd.DataFrame({"question": article.get("research_questions", [])})
@@ -1010,6 +1012,7 @@ with tab_article:
                 rq_df, num_rows="dynamic", use_container_width=True, key="rqs_de",
                 column_config={"question": st.column_config.TextColumn("Research question", width="large")},
             )
+            st.caption("To remove a row: select its checkbox on the left, then press Delete.")
 
             if st.form_submit_button("💾 Save metadata", type="primary"):
                 article["title"]              = new_title
@@ -1059,6 +1062,7 @@ with tab_article:
                 },
                 disabled=["id","actual_words"],
             )
+            st.caption("To remove a row: select its checkbox on the left, then press Delete.")
             if st.form_submit_button("💾 Save outline", type="primary"):
                 new_sections = []
                 for _, row in edited_sec.iterrows():
@@ -1117,6 +1121,7 @@ with tab_sections:
                 },
                 disabled=["words_written"],
             )
+            st.caption("To remove a row: select its checkbox on the left, then press Delete.")
             if st.form_submit_button("💾 Save sections", type="primary"):
                 new_sections = []
                 for _, row in edited_mgr.iterrows():
@@ -1262,14 +1267,17 @@ with tab_strategy:
                 new_q = st.data_editor(q_df, num_rows="dynamic", use_container_width=True,
                                        key="strat1_queries",
                                        column_config={"query": st.column_config.TextColumn("Query string", width="large")})
+                st.caption("Select checkbox + Delete to remove a row.")
                 st.markdown("**Inclusion criteria**")
                 inc_df = pd.DataFrame({"criterion": s1.get("inclusion_criteria", [])})
                 new_inc = st.data_editor(inc_df, num_rows="dynamic", use_container_width=True, key="strat1_inc",
                                          column_config={"criterion": st.column_config.TextColumn("Criterion", width="large")})
+                st.caption("Select checkbox + Delete to remove a row.")
                 st.markdown("**Exclusion criteria**")
                 exc_df = pd.DataFrame({"criterion": s1.get("exclusion_criteria", [])})
                 new_exc = st.data_editor(exc_df, num_rows="dynamic", use_container_width=True, key="strat1_exc",
                                          column_config={"criterion": st.column_config.TextColumn("Criterion", width="large")})
+                st.caption("Select checkbox + Delete to remove a row.")
 
             if st.form_submit_button("💾 Save Strategy 1", type="primary"):
                 strategy["strategy1"] = {
@@ -1301,6 +1309,7 @@ with tab_strategy:
                 src_df = pd.DataFrame({"source": s2.get("sources", [])})
                 new_src = st.data_editor(src_df, num_rows="dynamic", use_container_width=True, key="strat2_src",
                                           column_config={"source": st.column_config.TextColumn("Source", width="large")})
+                st.caption("Select checkbox + Delete to remove a row.")
             if st.form_submit_button("💾 Save Strategy 2", type="primary"):
                 strategy["strategy2"] = {
                     "purpose":  st2_purpose,
@@ -2194,6 +2203,7 @@ with tab_analysis:
                         hide_index=True, key=f"de_{key}",
                         column_config={"keyword": st.column_config.TextColumn("Keyword / phrase", max_chars=120)},
                     )
+                    st.caption("Checkbox + Delete to remove.")
                     parsed = [v.strip().lower() for v in edited["keyword"].dropna() if str(v).strip()]
                     new_kw[key] = parsed
                     if parsed != kw.get(key):
