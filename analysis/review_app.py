@@ -1589,7 +1589,7 @@ with tab_review:
         st.stop()
 
     st.markdown("---")
-    sc_sub = st.radio("sc_view", ["📝 Manual screening", "🤖 AI screening", "⬇️ Download literature"],
+    sc_sub = st.radio("sc_view", ["🤖 AI screening", "📝 Manual screening", "⬇️ Download literature"],
                       horizontal=True, label_visibility="collapsed")
 
     # ── Sub-tab 1: Pool overview ───────────────────────────────
