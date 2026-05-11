@@ -1192,75 +1192,68 @@ with tab_sections:
             secs[sec_id] = text
             save_sections(secs)
 
-        editor_col, preview_col = st.columns([1, 1], gap="medium")
+        st.text_area(
+            sel_title,
+            key=sec_key,
+            height=540,
+            on_change=_autosave_section,
+            label_visibility="collapsed",
+            placeholder="Start writing or paste your draft here…",
+        )
 
-        with editor_col:
+        save_c, reset_c, _ = st.columns([1, 1, 3])
+        with save_c:
+            if st.button("💾 Save section", use_container_width=True, type="primary"):
+                text = st.session_state.get(sec_key, "")
+                secs = load_sections()
+                secs[sec_id] = text
+                save_sections(secs)
+                st.success("Saved.")
+        with reset_c:
+            if st.button("↩ Reset from .docx", use_container_width=True,
+                         help="Re-seed from the corresponding Word document"):
+                fresh = seed_sections_from_docx()
+                st.session_state[sec_key] = fresh.get(sec_id, "")
+                secs = load_sections()
+                secs[sec_id] = st.session_state[sec_key]
+                save_sections(secs)
+                st.rerun()
+
+        notes_key = f"secnotes_{sec_id}"
+        if notes_key not in st.session_state:
+            secs_all = load_sections()
+            st.session_state[notes_key] = secs_all.get(notes_key, "")
+
+        def _autosave_notes():
+            notes = st.session_state.get(notes_key, "")
+            secs = load_sections()
+            secs[notes_key] = notes
+            save_sections(secs)
+
+        with st.expander("✏️ Author notes", expanded=False):
             st.text_area(
-                sel_title,
-                key=sec_key,
-                height=540,
-                on_change=_autosave_section,
+                "Notes", key=notes_key, height=100,
+                on_change=_autosave_notes,
                 label_visibility="collapsed",
-                placeholder="Start writing or paste your draft here…",
+                placeholder="Reminders, flagged citations, TODOs…",
             )
 
-            save_c, reset_c = st.columns([1, 1])
-            with save_c:
-                if st.button("💾 Save section", use_container_width=True, type="primary"):
-                    text = st.session_state.get(sec_key, "")
-                    secs = load_sections()
-                    secs[sec_id] = text
-                    save_sections(secs)
-                    st.success("Saved.")
-            with reset_c:
-                if st.button("↩ Reset from .docx", use_container_width=True,
-                             help="Re-seed from the corresponding Word document"):
-                    fresh = seed_sections_from_docx()
-                    st.session_state[sec_key] = fresh.get(sec_id, "")
-                    secs = load_sections()
-                    secs[sec_id] = st.session_state[sec_key]
-                    save_sections(secs)
-                    st.rerun()
-
-            notes_key = f"secnotes_{sec_id}"
-            if notes_key not in st.session_state:
-                secs_all = load_sections()
-                st.session_state[notes_key] = secs_all.get(notes_key, "")
-
-            def _autosave_notes():
-                notes = st.session_state.get(notes_key, "")
-                secs = load_sections()
-                secs[notes_key] = notes
-                save_sections(secs)
-
-            with st.expander("✏️ Author notes", expanded=False):
-                st.text_area(
-                    "Notes", key=notes_key, height=100,
-                    on_change=_autosave_notes,
-                    label_visibility="collapsed",
-                    placeholder="Reminders, flagged citations, TODOs…",
-                )
-
-        with preview_col:
-            st.markdown("**Full article draft preview**")
-            all_secs = load_sections()
-            any_content = False
-            for sec_def in sec_list:
-                sid   = sec_def["id"]
-                stitle = sec_def["title"]
-                # Use live session state for the active section, disk for others
-                if sid == sec_id:
-                    body = st.session_state.get(sec_key, "")
-                else:
-                    body = all_secs.get(sid, "")
-                if not body.strip():
-                    continue
-                any_content = True
-                st.markdown(f"### {stitle}")
-                st.markdown(body)
-                st.markdown("---")
-            if not any_content:
-                st.caption("No sections have content yet.")
+        st.markdown("---")
+        st.markdown("**Full article draft**")
+        all_secs = load_sections()
+        any_content = False
+        for sec_def in sec_list:
+            sid    = sec_def["id"]
+            stitle = sec_def["title"]
+            body   = st.session_state.get(f"sectext_{sid}", "") if sid == sec_id else all_secs.get(sid, "")
+            if not body.strip():
+                continue
+            any_content = True
+            st.markdown(f"### {stitle}")
+            st.markdown(body)
+            st.markdown("---")
+        if not any_content:
+            st.caption("No sections have content yet.")
 
 
 # ══════════════════════════════════════════════════════════════
