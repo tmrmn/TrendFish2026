@@ -26,12 +26,13 @@ OUT  = DOCS / "Manuscript_Trends_2026.docx"
 
 # Source files in manuscript order
 SOURCES = [
-    ("ABSTRACT",      DOCS / "Abstract_Trends_2026.docx"),
-    ("INTRODUCTION",  DOCS / "Introduction_Trends_2026.docx"),
-    ("METHODS",       DOCS / "Methods_Trends_2026.docx"),
-    ("RESULTS",       DOCS / "Results_Trends_2026.docx"),
-    ("DISCUSSION",    DOCS / "Discussion_Trends_2026.docx"),
-    ("CONCLUSIONS",   DOCS / "Conclusions_Trends_2026.docx"),
+    ("ABSTRACT",             DOCS / "Abstract_Trends_2026.docx"),
+    ("INTRODUCTION",         DOCS / "Introduction_Trends_2026.docx"),
+    ("CONCEPTUAL BACKGROUND",DOCS / "ConceptualBackground_Trends_2026.docx"),
+    ("METHODS",              DOCS / "Methods_Trends_2026.docx"),
+    ("RESULTS",              DOCS / "Results_Trends_2026.docx"),
+    ("DISCUSSION",           DOCS / "Discussion_Trends_2026.docx"),
+    ("CONCLUSIONS",          DOCS / "Conclusions_Trends_2026.docx"),
 ]
 
 
