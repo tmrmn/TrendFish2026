@@ -1,0 +1,17 @@
+{
+  "n_openalex": 2100,
+  "n_semanticscholar": 0,
+  "n_existing_excel": 0,
+  "n_total_identified": 2100,
+  "n_duplicates": 479,
+  "n_after_dedup": 1621,
+  "n_screened": 1621,
+  "n_excluded_screen": 901,
+  "exclusion_breakdown": {
+    "Not related to fisheries or marine resources": 708,
+    "No future-oriented perspective (retrospective only)": 109,
+    "Published before year 2000": 84
+  },
+  "n_included": 720,
+  "search_date": "2026-05-08 13:03"
+}

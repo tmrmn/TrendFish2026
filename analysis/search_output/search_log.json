@@ -1,0 +1,51 @@
+[
+  {
+    "database": "OpenAlex",
+    "query": "Future Trend Impact Analysis Fisheries",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Future studies Fisheries Research",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Future Fisheries Scenarios",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Future of Fisheries",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Future Trends and Drivers Fisheries",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Megatrend Impacts Fisheries",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  },
+  {
+    "database": "OpenAlex",
+    "query": "Exploring Megatrends Fisheries",
+    "date": "2026-05-08 13:03",
+    "n_results": 300,
+    "endpoint": "https://api.openalex.org/works"
+  }
+]
