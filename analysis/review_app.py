@@ -1562,267 +1562,300 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
 with tab_review:
     st.markdown("<div class='lr-section-header'>📄 Screening</div>", unsafe_allow_html=True)
 
+    # ── Metrics ───────────────────────────────────────────────
     _sc_vc = live_verdicts.value_counts() if total else {}
-    _sc_cols = st.columns(4)
-    with _sc_cols[0]: st.metric("Total papers", total)
-    with _sc_cols[1]: st.metric("🟢 AI green",  int(_sc_vc.get("green",  0)))
-    with _sc_cols[2]: st.metric("🟠 AI orange", int(_sc_vc.get("orange", 0)))
-    with _sc_cols[3]: st.metric("🔴 AI red",    int(_sc_vc.get("red",    0)))
+    _uv_vc = pool["user_verdict"].value_counts() if total else {}
+    _n_unreviewed = int((pool["user_verdict"].str.strip() == "").sum()) if total else 0
 
-    with st.expander("ℹ️ How the Review tab works", expanded=False):
-        st.markdown("""
-**Goal:** Go through each paper and record your inclusion/exclusion verdict.
+    ai_mc = st.columns(4)
+    with ai_mc[0]: st.metric("Total papers",  total)
+    with ai_mc[1]: st.metric("🟢 AI green",   int(_sc_vc.get("green",  0)))
+    with ai_mc[2]: st.metric("🟠 AI orange",  int(_sc_vc.get("orange", 0)))
+    with ai_mc[3]: st.metric("🔴 AI red",     int(_sc_vc.get("red",    0)))
 
-- 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
-- 🟠 **ORANGE** — borderline or missing abstract → needs your judgement
-- 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
-
-Use **sidebar filters** to focus on a subset. Verdicts save automatically.
-
-> **Tip:** Start with the 🔴 RED filter to clear obvious exclusions, then work through 🟠 ORANGE.
-""")
+    uv_mc = st.columns(4)
+    with uv_mc[0]: st.metric("✅ Included",   int(_uv_vc.get("include", 0)))
+    with uv_mc[1]: st.metric("❓ Unsure",     int(_uv_vc.get("unsure",  0)))
+    with uv_mc[2]: st.metric("❌ Excluded",   int(_uv_vc.get("exclude", 0)))
+    with uv_mc[3]: st.metric("⬜ Unreviewed", _n_unreviewed)
 
     if total == 0:
         st.info("No papers in pool yet. Use the 🔍 Search tab to add papers.")
         st.stop()
 
-    if st.checkbox("Show full pool table"):
-        show_df = pool[["title","year","journal","search_query",
-                        "date_added","kw_verdict","user_verdict"]].copy()
-        st.dataframe(show_df, use_container_width=True, height=400)
-
-    n_with_doi     = int((pool["doi"].str.strip() != "").sum())
-    n_with_pdf     = int((pool["pdf_url"].str.strip() != "").sum())
-    n_needs_enrich = n_with_doi - n_with_pdf
-
     st.markdown("---")
-    enrich_col, enrich_info = st.columns([1, 2])
-    with enrich_col:
-        enrich_btn = st.button("🔗 Fetch open-access links",
-                               disabled=(n_needs_enrich == 0), use_container_width=True)
-    with enrich_info:
-        st.caption(f"PDF links: **{n_with_pdf}** of {n_with_doi} with DOIs  ·  {n_needs_enrich} remaining")
+    sc_sub = st.radio("sc_view", ["📋 Pool overview", "🤖 AI screening", "📝 Manual screening"],
+                      horizontal=True, label_visibility="collapsed")
 
-    if enrich_btn:
-        with st.status("Querying Unpaywall…", expanded=True) as status:
-            def _log(msg): st.write(msg)
-            found, checked = enrich_unpaywall(email=cfg.get("email","tsz000@uit.no"), log_fn=_log)
-            status.update(label=f"Done — {found} / {checked} PDF links found", state="complete")
-        st.rerun()
+    # ── Sub-tab 1: Pool overview ───────────────────────────────
+    if sc_sub == "📋 Pool overview":
+        if st.checkbox("Show full pool table"):
+            show_df = pool[["title","year","journal","search_query",
+                            "date_added","kw_verdict","user_verdict"]].copy()
+            st.dataframe(show_df, use_container_width=True, height=400)
 
-    st.markdown("")
-    st.markdown("**Export**")
-    exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
-    with exp_col1:
-        st.download_button("⬇️ Full pool (CSV)",
-            data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
-            file_name="full_text_review.csv", mime="text/csv", use_container_width=True)
-    with exp_col2:
-        bib_filter = st.selectbox("BibTeX export",
-            ["Included papers","Included + Unsure","All reviewed","Entire pool"],
-            label_visibility="collapsed")
-        bib_count_map = {
-            "Included papers":   int((pool["user_verdict"]=="include").sum()),
-            "Included + Unsure": int(pool["user_verdict"].isin(["include","unsure"]).sum()),
-            "All reviewed":      int(pool["user_verdict"].str.strip().astype(bool).sum()),
-            "Entire pool":       len(pool),
-        }
-        n_bib = bib_count_map[bib_filter]
-        bib_bytes = _cached_bibtex(bib_filter, pool_mtime) if n_bib > 0 else b""
-        st.download_button(f"⬇️ Export BibTeX ({n_bib})", data=bib_bytes,
-            file_name="trendfish_references.bib", mime="text/plain",
-            disabled=(n_bib == 0), use_container_width=True)
-    with exp_col3:
-        st.caption(
-            f"Included: **{int((pool['user_verdict']=='include').sum())}**  ·  "
-            f"Unsure: **{int((pool['user_verdict']=='unsure').sum())}**  ·  "
-            f"Excluded: **{int((pool['user_verdict']=='exclude').sum())}**  ·  "
-            f"Unreviewed: **{int((pool['user_verdict'].str.strip()=='').sum())}**"
-        )
+        n_with_doi     = int((pool["doi"].str.strip() != "").sum())
+        n_with_pdf     = int((pool["pdf_url"].str.strip() != "").sum())
+        n_needs_enrich = n_with_doi - n_with_pdf
 
-    st.markdown("---")
+        st.markdown("---")
+        enrich_col, enrich_info = st.columns([1, 2])
+        with enrich_col:
+            enrich_btn = st.button("🔗 Fetch open-access links",
+                                   disabled=(n_needs_enrich == 0), use_container_width=True)
+        with enrich_info:
+            st.caption(f"PDF links: **{n_with_pdf}** of {n_with_doi} with DOIs  ·  {n_needs_enrich} remaining")
 
-    mask = pd.Series([True] * total, index=pool.index)
-    if ai_filter != "All":
-        mask &= (live_verdicts == ai_filter)
-    if reviewed_filter == "Unreviewed":
-        mask &= ~reviewed_mask
-    elif reviewed_filter == "Reviewed":
-        mask &= reviewed_mask
-
-    filtered_idx = pool[mask].index.tolist()
-    n_filtered   = len(filtered_idx)
-
-    if n_filtered == 0:
-        st.warning("No papers match the current filters.")
-        st.stop()
-
-    pos = min(st.session_state.paper_idx, n_filtered - 1)
-    st.session_state.paper_idx = pos
-    row_idx = filtered_idx[pos]
-    row     = pool.loc[row_idx]
-
-    nav_l, nav_m, nav_r = st.columns([1, 3, 1])
-    with nav_l:
-        if st.button("◀ Previous", disabled=(pos == 0), use_container_width=True):
-            st.session_state.paper_idx = pos - 1
-            st.rerun()
-    with nav_m:
-        jump = st.number_input(
-            f"Paper (1–{n_filtered})  of {n_filtered} shown  |  {total} total",
-            min_value=1, max_value=n_filtered, value=pos + 1, step=1,
-        )
-        if int(jump) - 1 != pos:
-            st.session_state.paper_idx = int(jump) - 1
-            st.rerun()
-    with nav_r:
-        if st.button("Next ▶", disabled=(pos == n_filtered - 1), use_container_width=True):
-            st.session_state.paper_idx = pos + 1
+        if enrich_btn:
+            with st.status("Querying Unpaywall…", expanded=True) as status:
+                def _log(msg): st.write(msg)
+                found, checked = enrich_unpaywall(email=cfg.get("email","tsz000@uit.no"), log_fn=_log)
+                status.update(label=f"Done — {found} / {checked} PDF links found", state="complete")
             st.rerun()
 
-    st.markdown("---")
+        st.markdown("")
+        st.markdown("**Export**")
+        exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
+        with exp_col1:
+            st.download_button("⬇️ Full pool (CSV)",
+                data=pool.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig"),
+                file_name="full_text_review.csv", mime="text/csv", use_container_width=True)
+        with exp_col2:
+            bib_filter = st.selectbox("BibTeX export",
+                ["Included papers","Included + Unsure","All reviewed","Entire pool"],
+                label_visibility="collapsed")
+            bib_count_map = {
+                "Included papers":   int((pool["user_verdict"]=="include").sum()),
+                "Included + Unsure": int(pool["user_verdict"].isin(["include","unsure"]).sum()),
+                "All reviewed":      int(pool["user_verdict"].str.strip().astype(bool).sum()),
+                "Entire pool":       len(pool),
+            }
+            n_bib = bib_count_map[bib_filter]
+            bib_bytes = _cached_bibtex(bib_filter, pool_mtime) if n_bib > 0 else b""
+            st.download_button(f"⬇️ Export BibTeX ({n_bib})", data=bib_bytes,
+                file_name="trendfish_references.bib", mime="text/plain",
+                disabled=(n_bib == 0), use_container_width=True)
+        with exp_col3:
+            st.caption(
+                f"Included: **{int((pool['user_verdict']=='include').sum())}**  ·  "
+                f"Unsure: **{int((pool['user_verdict']=='unsure').sum())}**  ·  "
+                f"Excluded: **{int((pool['user_verdict']=='exclude').sum())}**  ·  "
+                f"Unreviewed: **{_n_unreviewed}**"
+            )
 
-    sc      = score_paper(str(row.get("title","")), str(row.get("abstract","")), kw)
-    vc_col  = VERDICT_COLORS[sc["verdict"]]
+    # ── Sub-tab 2: AI screening ────────────────────────────────
+    elif sc_sub == "🤖 AI screening":
+        with st.expander("ℹ️ How AI screening works", expanded=False):
+            st.markdown("""
+- 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
+- 🟠 **ORANGE** — borderline or missing abstract → needs your judgement
+- 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
 
-    sc_left, sc_right = st.columns([3, 1])
-    with sc_left:
-        st.markdown(
-            f"<div style='background:{vc_col}22;border:1px solid {vc_col};"
-            f"border-radius:8px;padding:10px 14px'>"
-            f"<span style='font-size:1.1rem;font-weight:700;color:{vc_col}'>"
-            f"● {sc['verdict'].upper()}</span>"
-            f"<span style='color:#555;font-size:0.9rem;margin-left:10px'>{sc['reason']}</span>"
-            f"</div>", unsafe_allow_html=True,
-        )
-    with sc_right:
-        st.markdown(
-            f"<div style='text-align:center;font-size:0.85rem;padding-top:10px'>"
-            f"🐟 <b style='color:#0d6efd'>{sc['fish']}/8</b> &nbsp;&nbsp;"
-            f"🔭 <b style='color:#6f42c1'>{sc['future']}/10</b></div>",
-            unsafe_allow_html=True,
-        )
+Scores are computed automatically from title and abstract using keyword matching.
+""")
+        ai_view_filter = st.radio("Show", ["All", "🟢 Green", "🟠 Orange", "🔴 Red"],
+                                  horizontal=True)
+        verdict_map = {"🟢 Green": "green", "🟠 Orange": "orange", "🔴 Red": "red"}
+        ai_rows = pool.copy()
+        ai_rows["_ai"] = live_verdicts
+        if ai_view_filter != "All":
+            ai_rows = ai_rows[ai_rows["_ai"] == verdict_map[ai_view_filter]]
+        ai_show = ai_rows[["title","year","journal","_ai","user_verdict"]].rename(
+            columns={"_ai": "AI verdict", "user_verdict": "Your verdict"})
+        st.dataframe(ai_show, use_container_width=True, height=500)
 
-    bar_l, bar_r = st.columns(2)
-    for col, (score, max_s, label, color) in zip(
-        [bar_l, bar_r],
-        [(sc["fish"], 8, "🐟 Fisheries", "#0d6efd"), (sc["future"], 10, "🔭 Future", "#6f42c1")],
-    ):
-        with col:
-            pct = score / max_s * 100
+    # ── Sub-tab 3: Manual screening ────────────────────────────
+    elif sc_sub == "📝 Manual screening":
+        with st.expander("ℹ️ How manual screening works", expanded=False):
+            st.markdown("""
+**Goal:** Go through each paper and record your inclusion/exclusion verdict.
+
+Use **sidebar filters** to focus on a subset (AI colour, reviewed/unreviewed). Verdicts save automatically.
+
+> **Tip:** Start with the 🔴 RED filter to clear obvious exclusions, then work through 🟠 ORANGE.
+""")
+
+        mask = pd.Series([True] * total, index=pool.index)
+        if ai_filter != "All":
+            mask &= (live_verdicts == ai_filter)
+        if reviewed_filter == "Unreviewed":
+            mask &= ~reviewed_mask
+        elif reviewed_filter == "Reviewed":
+            mask &= reviewed_mask
+
+        filtered_idx = pool[mask].index.tolist()
+        n_filtered   = len(filtered_idx)
+
+        if n_filtered == 0:
+            st.warning("No papers match the current filters.")
+            st.stop()
+
+        pos = min(st.session_state.paper_idx, n_filtered - 1)
+        st.session_state.paper_idx = pos
+        row_idx = filtered_idx[pos]
+        row     = pool.loc[row_idx]
+
+        nav_l, nav_m, nav_r = st.columns([1, 3, 1])
+        with nav_l:
+            if st.button("◀ Previous", disabled=(pos == 0), use_container_width=True):
+                st.session_state.paper_idx = pos - 1
+                st.rerun()
+        with nav_m:
+            jump = st.number_input(
+                f"Paper (1–{n_filtered})  of {n_filtered} shown  |  {total} total",
+                min_value=1, max_value=n_filtered, value=pos + 1, step=1,
+            )
+            if int(jump) - 1 != pos:
+                st.session_state.paper_idx = int(jump) - 1
+                st.rerun()
+        with nav_r:
+            if st.button("Next ▶", disabled=(pos == n_filtered - 1), use_container_width=True):
+                st.session_state.paper_idx = pos + 1
+                st.rerun()
+
+        st.markdown("---")
+
+        sc      = score_paper(str(row.get("title","")), str(row.get("abstract","")), kw)
+        vc_col  = VERDICT_COLORS[sc["verdict"]]
+
+        sc_left, sc_right = st.columns([3, 1])
+        with sc_left:
             st.markdown(
-                f"<div style='font-size:0.8rem;color:{color}'>{label} score: {score}/{max_s}</div>"
-                f"<div class='score-bar-wrap'><div class='score-bar' "
-                f"style='width:{pct:.0f}%;background:{color}'></div></div>",
+                f"<div style='background:{vc_col}22;border:1px solid {vc_col};"
+                f"border-radius:8px;padding:10px 14px'>"
+                f"<span style='font-size:1.1rem;font-weight:700;color:{vc_col}'>"
+                f"● {sc['verdict'].upper()}</span>"
+                f"<span style='color:#555;font-size:0.9rem;margin-left:10px'>{sc['reason']}</span>"
+                f"</div>", unsafe_allow_html=True,
+            )
+        with sc_right:
+            st.markdown(
+                f"<div style='text-align:center;font-size:0.85rem;padding-top:10px'>"
+                f"🐟 <b style='color:#0d6efd'>{sc['fish']}/8</b> &nbsp;&nbsp;"
+                f"🔭 <b style='color:#6f42c1'>{sc['future']}/10</b></div>",
                 unsafe_allow_html=True,
             )
 
-    with st.expander("Matched keywords", expanded=False):
-        mc1, mc2, mc3 = st.columns(3)
-        with mc1:
-            st.markdown("**Fisheries hits**")
-            for t in sc["fish_hits"]: st.markdown(f"<div class='kw-match'>🐟 {t}</div>", unsafe_allow_html=True)
-            if not sc["fish_hits"]: st.caption("none")
-        with mc2:
-            st.markdown("**Future hits**")
-            for t in sc["future_hits"]: st.markdown(f"<div class='kw-match'>🔭 {t}</div>", unsafe_allow_html=True)
-            if not sc["future_hits"]: st.caption("none")
-        with mc3:
-            st.markdown("**Exclusion hits**")
-            for t in sc["retro"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>⏪ {t}</div>", unsafe_allow_html=True)
-            for t in sc["bio"]:   st.markdown(f"<div class='kw-match' style='color:#dc3545'>🧬 {t}</div>", unsafe_allow_html=True)
-            for t in sc["nonfish"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>🚫 {t}</div>", unsafe_allow_html=True)
-            if not (sc["retro"] + sc["bio"] + sc["nonfish"]): st.caption("none")
+        bar_l, bar_r = st.columns(2)
+        for col, (score, max_s, label, color) in zip(
+            [bar_l, bar_r],
+            [(sc["fish"], 8, "🐟 Fisheries", "#0d6efd"), (sc["future"], 10, "🔭 Future", "#6f42c1")],
+        ):
+            with col:
+                pct = score / max_s * 100
+                st.markdown(
+                    f"<div style='font-size:0.8rem;color:{color}'>{label} score: {score}/{max_s}</div>"
+                    f"<div class='score-bar-wrap'><div class='score-bar' "
+                    f"style='width:{pct:.0f}%;background:{color}'></div></div>",
+                    unsafe_allow_html=True,
+                )
 
-    title   = str(row.get("title",   "")).strip() or "(no title)"
-    authors = str(row.get("authors", "")).strip()
-    year    = str(row.get("year",    "")).strip()
-    journal = str(row.get("journal", "")).strip()
-    doi     = str(row.get("doi",     "")).strip()
-    oa_id   = str(row.get("openalex_id","")).strip()
-    sq      = str(row.get("search_query","")).strip()
-    pdf_url = str(row.get("pdf_url","")).strip()
-    is_oa   = str(row.get("is_oa","")).strip().lower()
+        with st.expander("Matched keywords", expanded=False):
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                st.markdown("**Fisheries hits**")
+                for t in sc["fish_hits"]: st.markdown(f"<div class='kw-match'>🐟 {t}</div>", unsafe_allow_html=True)
+                if not sc["fish_hits"]: st.caption("none")
+            with mc2:
+                st.markdown("**Future hits**")
+                for t in sc["future_hits"]: st.markdown(f"<div class='kw-match'>🔭 {t}</div>", unsafe_allow_html=True)
+                if not sc["future_hits"]: st.caption("none")
+            with mc3:
+                st.markdown("**Exclusion hits**")
+                for t in sc["retro"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>⏪ {t}</div>", unsafe_allow_html=True)
+                for t in sc["bio"]:   st.markdown(f"<div class='kw-match' style='color:#dc3545'>🧬 {t}</div>", unsafe_allow_html=True)
+                for t in sc["nonfish"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>🚫 {t}</div>", unsafe_allow_html=True)
+                if not (sc["retro"] + sc["bio"] + sc["nonfish"]): st.caption("none")
 
-    st.markdown(f"### {title}")
-    meta = []
-    if authors: meta.append(authors[:120] + ("…" if len(authors) > 120 else ""))
-    if year:    meta.append(year)
-    if journal: meta.append(f"*{journal}*")
-    if meta:
-        st.markdown("<div style='color:#555;font-size:0.9rem'>" + "  ·  ".join(meta) + "</div>",
-                    unsafe_allow_html=True)
+        title   = str(row.get("title",   "")).strip() or "(no title)"
+        authors = str(row.get("authors", "")).strip()
+        year    = str(row.get("year",    "")).strip()
+        journal = str(row.get("journal", "")).strip()
+        doi     = str(row.get("doi",     "")).strip()
+        oa_id   = str(row.get("openalex_id","")).strip()
+        sq      = str(row.get("search_query","")).strip()
+        pdf_url = str(row.get("pdf_url","")).strip()
+        is_oa   = str(row.get("is_oa","")).strip().lower()
 
-    link_row, badge_row = st.columns([3, 1])
-    with link_row:
-        if pdf_url: st.link_button("📄 Open PDF ↗", pdf_url, type="primary")
-        sec_links = []
-        if doi:   sec_links.append(f"[DOI ↗]({'https://doi.org/'+doi if not doi.startswith('http') else doi})")
-        if oa_id: sec_links.append(f"[OpenAlex ↗]({oa_id})")
-        if sec_links: st.markdown("  ·  ".join(sec_links))
-    with badge_row:
-        badge = OA_STATUS.get(is_oa)
-        if badge:
-            icon, label, color = badge
-            st.markdown(f"<div style='text-align:right;color:{color};font-size:0.85rem;padding-top:6px'>{icon} {label}</div>",
+        st.markdown(f"### {title}")
+        meta = []
+        if authors: meta.append(authors[:120] + ("…" if len(authors) > 120 else ""))
+        if year:    meta.append(year)
+        if journal: meta.append(f"*{journal}*")
+        if meta:
+            st.markdown("<div style='color:#555;font-size:0.9rem'>" + "  ·  ".join(meta) + "</div>",
                         unsafe_allow_html=True)
 
-    if sq: st.caption(f"Found via: *{sq}*")
+        link_row, badge_row = st.columns([3, 1])
+        with link_row:
+            if pdf_url: st.link_button("📄 Open PDF ↗", pdf_url, type="primary")
+            sec_links = []
+            if doi:   sec_links.append(f"[DOI ↗]({'https://doi.org/'+doi if not doi.startswith('http') else doi})")
+            if oa_id: sec_links.append(f"[OpenAlex ↗]({oa_id})")
+            if sec_links: st.markdown("  ·  ".join(sec_links))
+        with badge_row:
+            badge = OA_STATUS.get(is_oa)
+            if badge:
+                icon, label, color = badge
+                st.markdown(f"<div style='text-align:right;color:{color};font-size:0.85rem;padding-top:6px'>{icon} {label}</div>",
+                            unsafe_allow_html=True)
 
-    abstract = str(row.get("abstract","")).strip()
-    ab_src   = str(row.get("abstract_source","")).strip()
-    if abstract and len(abstract) > 20:
-        src_note = " *(fetched from OpenAlex)*" if ab_src == "openalex" else ""
-        st.markdown(f"**Abstract**{src_note}")
-        st.markdown(f"<div class='abstract-box'>{abstract}</div>", unsafe_allow_html=True)
-    else:
-        st.warning("No abstract available — check DOI before deciding.")
+        if sq: st.caption(f"Found via: *{sq}*")
 
-    st.markdown("---")
-    current_verdict = str(row.get("user_verdict","")).strip()
-    current_notes   = str(row.get("user_notes",  "")).strip()
+        abstract = str(row.get("abstract","")).strip()
+        ab_src   = str(row.get("abstract_source","")).strip()
+        if abstract and len(abstract) > 20:
+            src_note = " *(fetched from OpenAlex)*" if ab_src == "openalex" else ""
+            st.markdown(f"**Abstract**{src_note}")
+            st.markdown(f"<div class='abstract-box'>{abstract}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("No abstract available — check DOI before deciding.")
 
-    st.subheader("Your verdict")
-    btn_cols = st.columns(3)
-    clicked  = None
-    for col, (key, (icon, label, bg, col_hex)) in zip(btn_cols, VERDICTS.items()):
-        border = "3px solid #000" if current_verdict == key else f"2px solid {col_hex}"
-        with col:
-            st.markdown(
-                f"<div style='background:{bg};border:{border};border-radius:8px;"
-                f"padding:6px;text-align:center;font-weight:700;font-size:1.05rem'>"
-                f"{icon} {label}</div>", unsafe_allow_html=True,
-            )
-            if st.button(f"Set {label}", key=f"btn_{key}", use_container_width=True):
-                clicked = key
+        st.markdown("---")
+        current_verdict = str(row.get("user_verdict","")).strip()
+        current_notes   = str(row.get("user_notes",  "")).strip()
 
-    notes_input = st.text_area("Notes (optional)", value=current_notes, height=80,
-                               placeholder="Comments, flags, or reasons…")
+        st.subheader("Your verdict")
+        btn_cols = st.columns(3)
+        clicked  = None
+        for col, (key, (icon, label, bg, col_hex)) in zip(btn_cols, VERDICTS.items()):
+            border = "3px solid #000" if current_verdict == key else f"2px solid {col_hex}"
+            with col:
+                st.markdown(
+                    f"<div style='background:{bg};border:{border};border-radius:8px;"
+                    f"padding:6px;text-align:center;font-weight:700;font-size:1.05rem'>"
+                    f"{icon} {label}</div>", unsafe_allow_html=True,
+                )
+                if st.button(f"Set {label}", key=f"btn_{key}", use_container_width=True):
+                    clicked = key
 
-    if clicked is not None:
-        save_verdict_to_pool(pool, row_idx, clicked, notes_input)
-        st.success(f"Saved: {VERDICTS[clicked][0]} {VERDICTS[clicked][1]}")
-        if reviewed_filter == "Unreviewed" and pos + 1 < n_filtered:
-            st.session_state.paper_idx = pos + 1
-        st.rerun()
+        notes_input = st.text_area("Notes (optional)", value=current_notes, height=80,
+                                   placeholder="Comments, flags, or reasons…")
 
-    save_c, _ = st.columns([1, 4])
-    with save_c:
-        if st.button("💾 Save notes", disabled=(not current_verdict)):
-            save_verdict_to_pool(pool, row_idx, current_verdict, notes_input)
-            st.success("Notes saved.")
+        if clicked is not None:
+            save_verdict_to_pool(pool, row_idx, clicked, notes_input)
+            st.success(f"Saved: {VERDICTS[clicked][0]} {VERDICTS[clicked][1]}")
+            if reviewed_filter == "Unreviewed" and pos + 1 < n_filtered:
+                st.session_state.paper_idx = pos + 1
             st.rerun()
 
-    if current_verdict:
-        icon, label, _, col_hex = VERDICTS[current_verdict]
-        reviewed_at = str(row.get("reviewed_at","")).strip()
-        st.markdown(
-            f"<div style='font-size:0.9rem;color:{col_hex};margin-top:6px'>"
-            f"Your verdict: {icon} {label}"
-            + (f" — *{current_notes}*" if current_notes else "")
-            + "</div>", unsafe_allow_html=True,
-        )
-        if reviewed_at: st.caption(f"Reviewed at: {reviewed_at}")
+        save_c, _ = st.columns([1, 4])
+        with save_c:
+            if st.button("💾 Save notes", disabled=(not current_verdict)):
+                save_verdict_to_pool(pool, row_idx, current_verdict, notes_input)
+                st.success("Notes saved.")
+                st.rerun()
+
+        if current_verdict:
+            icon, label, _, col_hex = VERDICTS[current_verdict]
+            reviewed_at = str(row.get("reviewed_at","")).strip()
+            st.markdown(
+                f"<div style='font-size:0.9rem;color:{col_hex};margin-top:6px'>"
+                f"Your verdict: {icon} {label}"
+                + (f" — *{current_notes}*" if current_notes else "")
+                + "</div>", unsafe_allow_html=True,
+            )
+            if reviewed_at: st.caption(f"Reviewed at: {reviewed_at}")
 
 
 # ══════════════════════════════════════════════════════════════
