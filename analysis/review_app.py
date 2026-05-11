@@ -904,60 +904,57 @@ live_verdicts = pd.Series(
 with st.sidebar:
     st.title("🐟 TrendFish 2026")
 
-    with st.expander("❓ Quick start", expanded=False):
-        st.markdown("""
-**Eight tabs — use in order:**
+    # ── Identification ────────────────────────────────────────
+    _sb_strategy = load_search_strategy()
+    _sb_s1       = _sb_strategy.get("strategy1", {})
+    _sb_n_ret    = _sb_s1.get("n_retrieved", "?")
+    _sb_n_man    = _sb_s1.get("n_manual",    "?")
+    _sb_n_dedup  = _sb_s1.get("n_deduped",   "?")
 
-1. **📋 Article** — define article structure and metadata
-2. **📝 Sections** — plan each section with notes
-3. **🔎 Search Strategy** — document your search strategy
-4. **🔍 Search** — fetch papers from OpenAlex
-5. **📄 Screening** — screen and review papers
-6. **📊 Analysis** — STEEP gap, megatrends, signals
-7. **✍️ Draft** — write and edit section drafts
-8. **📤 Outputs** — generate manuscript and exports
+    st.markdown("**📥 Identification**")
+    id_c1, id_c2, id_c3 = st.columns(3)
+    with id_c1: st.metric("Retrieved",  _sb_n_ret)
+    with id_c2: st.metric("Manual",     _sb_n_man)
+    with id_c3: st.metric("After dedup",_sb_n_dedup)
+    st.metric("Currently in pool", total)
 
-Progress saved to `data/` automatically.
-""")
-
+    # ── Screening ─────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**Review status**")
-    st.metric("Papers in pool", total)
-    st.metric("Reviewed", f"{n_reviewed} / {total}")
+    st.markdown("**🔬 Screening**")
     if total:
-        st.progress(n_reviewed / total)
+        st.progress(n_reviewed / total, text=f"{n_reviewed} / {total} screened")
+    else:
+        st.progress(0.0, text="0 / 0 screened")
 
-    if total:
-        _sb_uv = pool["user_verdict"].value_counts()
-        for key, (icon, label, bg, col) in VERDICTS.items():
-            n = int((pool["user_verdict"] == key).sum())
-            st.markdown(
-                f"<span style='color:{col};font-weight:700'>{icon} {label}</span>: {n}",
-                unsafe_allow_html=True,
-            )
+    _sb_sc_vc = live_verdicts.value_counts() if total else {}
+    sc_c1, sc_c2, sc_c3 = st.columns(3)
+    with sc_c1: st.metric("🟢 Green",  int(_sb_sc_vc.get("green",  0)))
+    with sc_c2: st.metric("🟠 Orange", int(_sb_sc_vc.get("orange", 0)))
+    with sc_c3: st.metric("🔴 Red",    int(_sb_sc_vc.get("red",    0)))
 
+    _sb_n_inc = int((pool["user_verdict"] == "include").sum()) if total else 0
+    _sb_n_exc = int((pool["user_verdict"] == "exclude").sum()) if total else 0
+    _sb_n_unr = int((pool["user_verdict"].str.strip() == "").sum()) if total else 0
+    uv_c1, uv_c2, uv_c3 = st.columns(3)
+    with uv_c1: st.metric("✅ Included",   _sb_n_inc)
+    with uv_c2: st.metric("❌ Excluded",   _sb_n_exc)
+    with uv_c3: st.metric("⬜ Unreviewed", _sb_n_unr)
+
+    # ── Writing ───────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("**To-do**")
-
+    st.markdown("**✍️ Writing**")
     _sb_secs    = load_sections()
     _sb_seclist = load_article_structure().get("sections", [])
-    _sb_n_notes = sum(1 for s in _sb_seclist if _sb_secs.get(f"secnotes_{s['id']}", "").strip())
-    _sb_n_draft = sum(1 for s in _sb_seclist if _sb_secs.get(f"sectext_{s['id']}",  "").strip())
     _sb_n_secs  = len(_sb_seclist)
-    _sb_strategy = load_search_strategy()
-
-    def _todo(done, label):
-        icon = "✅" if done else "⬜"
-        st.markdown(f"{icon} {label}")
-
-    _todo(_sb_n_secs > 0,                              f"Define sections ({_sb_n_secs})")
-    _todo(_sb_n_notes == _sb_n_secs and _sb_n_secs>0, f"Section notes ({_sb_n_notes}/{_sb_n_secs})")
-    _todo(bool(_sb_strategy.get("strategy1",{}).get("queries")), "Search strategy 1 set")
-    _todo(total > 0,                                   f"Papers in pool ({total})")
-    _todo(total > 0 and n_reviewed == total,           f"All papers screened ({n_reviewed}/{total})")
-    _n_inc = int((pool["user_verdict"]=="include").sum()) if total else 0
-    _todo(_n_inc > 0,                                  f"Papers included ({_n_inc})")
-    _todo(_sb_n_draft > 0,                             f"Sections drafted ({_sb_n_draft}/{_sb_n_secs})")
+    _sb_n_draft = sum(1 for s in _sb_seclist if _sb_secs.get(f"sectext_{s['id']}", "").strip())
+    _sb_max_wc  = load_article_structure().get("max_words", 12000)
+    _sb_total_wc = sum(
+        len(_sb_secs.get(f"sectext_{s['id']}", "").split())
+        for s in _sb_seclist
+    )
+    st.metric("Sections drafted", f"{_sb_n_draft} / {_sb_n_secs}")
+    st.progress(min(_sb_total_wc / _sb_max_wc, 1.0),
+                text=f"{_sb_total_wc:,} / {_sb_max_wc:,} words")
 
 ai_filter       = st.session_state.filter_verdict
 reviewed_filter = st.session_state.filter_reviewed
