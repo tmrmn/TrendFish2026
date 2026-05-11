@@ -833,7 +833,10 @@ st.set_page_config(
 )
 
 # ── Password gate ─────────────────────────────────────────────
-_PASSWORD = st.secrets.get("APP_PASSWORD", "") if hasattr(st, "secrets") else ""
+try:
+    _PASSWORD = st.secrets.get("APP_PASSWORD", "")
+except Exception:
+    _PASSWORD = ""
 if _PASSWORD:
     if not st.session_state.get("_authenticated"):
         st.title("🐟 TrendFish 2026")
