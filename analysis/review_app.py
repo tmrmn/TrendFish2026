@@ -1650,28 +1650,6 @@ with tab_review:
 
     # ── Sub-tab 2: AI screening ────────────────────────────────
     elif sc_sub == "🤖 AI screening":
-        _ai_s1      = strategy.get("strategy1", {})
-        _ai_n_ret   = _ai_s1.get("n_retrieved")
-        _ai_n_man   = _ai_s1.get("n_manual")
-        _ai_n_dedup = _ai_s1.get("n_deduped")
-        _ai_n_removed = (
-            _ai_n_ret - _ai_n_dedup
-            if isinstance(_ai_n_ret, int) and isinstance(_ai_n_dedup, int) else None
-        )
-        _ai_n_pool = (
-            _ai_n_ret + _ai_n_man - _ai_n_removed
-            if isinstance(_ai_n_ret, int) and isinstance(_ai_n_man, int) and isinstance(_ai_n_removed, int) else None
-        )
-        _ai_not_added = (_ai_n_pool - total) if isinstance(_ai_n_pool, int) else "?"
-
-        _aim1, _aim2, _aim3 = st.columns(3)
-        with _aim1: st.metric("Eligible for review", _ai_n_pool if _ai_n_pool is not None else "?")
-        with _aim2: st.metric("Added to review pool", total)
-        with _aim3: st.metric("Not added", _ai_not_added,
-                              help="Retrieved + manual − duplicates − added to pool. "
-                                   "Papers excluded during search preview or not yet added.")
-
-        st.markdown("---")
         with st.expander("ℹ️ How AI screening works", expanded=False):
             st.markdown("""
 - 🟢 **GREEN** — strong fisheries + future-orientation signals → likely include
@@ -1679,8 +1657,6 @@ with tab_review:
 - 🔴 **RED** — no fisheries relevance, or purely retrospective → likely exclude
 
 Scores are computed automatically from title and abstract using keyword matching.
-Papers listed below are those **in the review pool**. The **Not added** count above reflects
-papers retrieved but never added — those are no longer stored and cannot be inspected here.
 """)
         ai_view_filter = st.radio("Show", ["All", "🟢 Green", "🟠 Orange", "🔴 Red"],
                                   horizontal=True)
