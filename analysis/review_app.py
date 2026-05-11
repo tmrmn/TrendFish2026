@@ -1529,19 +1529,25 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
     if total == 0:
         st.info("Pool is empty. Run a search to add papers.")
     else:
-        _s1 = strategy.get("strategy1", {})
+        _s1      = strategy.get("strategy1", {})
         _n_ret   = _s1.get("n_retrieved")
+        _n_man   = _s1.get("n_manual")
         _n_dedup = _s1.get("n_deduped")
         _n_removed = (_n_ret - _n_dedup) if isinstance(_n_ret, int) and isinstance(_n_dedup, int) else "?"
+        _n_pool    = (
+            _n_ret + _n_man - _n_removed
+            if isinstance(_n_ret, int) and isinstance(_n_man, int) and isinstance(_n_removed, int)
+            else "?"
+        )
         _pm1, _pm2, _pm3, _pm4 = st.columns(4)
         with _pm1:
-            st.metric("Retrieved",            _n_ret   if _n_ret   is not None else "?")
+            st.metric("Retrieved",            _n_ret     if _n_ret is not None else "?")
         with _pm2:
-            st.metric("Manual inclusions",    _s1.get("n_manual", "?"))
+            st.metric("Manual inclusions",    _n_man     if _n_man is not None else "?")
         with _pm3:
             st.metric("Removed duplications", _n_removed)
         with _pm4:
-            st.metric("In pool",              total)
+            st.metric("In pool",              _n_pool)
         if st.checkbox("Show full pool table"):
             show_df = pool[["title","year","journal","search_query",
                             "date_added","kw_verdict","user_verdict"]].copy()
