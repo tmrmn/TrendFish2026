@@ -1431,7 +1431,7 @@ with tab_search:
         st.caption("Fill in at least one row above to build a query.")
 
     st.markdown("")
-    run_c, save_c, _ = st.columns([1.2, 1.2, 3])
+    run_c, save_c, tips_c = st.columns([1.2, 1.2, 3])
     with run_c:
         run_btn = st.button(
             "🔍 Run Search", type="primary",
@@ -1446,6 +1446,8 @@ with tab_search:
                 st.session_state.search_cfg = cfg
                 save_search_config(cfg)
             st.success("Query saved.")
+    with tips_c:
+        st.caption("**AND** = both must appear · **OR** = either may appear · **NOT** = exclude · multi-word phrases are auto-quoted")
 
     query_to_run = None
     if run_btn and current_query:
