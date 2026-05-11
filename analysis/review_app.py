@@ -1447,7 +1447,16 @@ with tab_search:
                 save_search_config(cfg)
             st.success("Query saved.")
     with tips_c:
-        st.caption("**AND** = both must appear · **OR** = either may appear · **NOT** = exclude · multi-word phrases are auto-quoted")
+        with st.expander("💡 Query tips & examples"):
+            st.markdown("""
+| Operator | Effect | Example |
+|----------|--------|---------|
+| **AND** | Both must appear — narrows | `fisheries` AND `climate change` |
+| **OR** | Either may appear — broadens | `aquaculture` OR `"fish farming"` |
+| **NOT** | Excludes this term | `fisheries` AND `management` NOT `aquaculture` |
+
+Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
+""")
 
     query_to_run = None
     if run_btn and current_query:
