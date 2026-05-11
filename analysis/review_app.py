@@ -195,6 +195,7 @@ DEFAULT_ARTICLE = {
         {"id": "results",               "title": "4. Results",              "target_words": 1200},
         {"id": "discussion",            "title": "5. Discussion",           "target_words": 1200},
         {"id": "conclusions",           "title": "6. Conclusions",          "target_words": 400},
+        {"id": "references",            "title": "References",              "target_words": 0},
     ],
 }
 
@@ -677,7 +678,15 @@ def add_megatrend_to_excel(row: dict):
 def load_article_structure() -> dict:
     if ARTICLE_FILE.exists():
         try:
-            return json.loads(ARTICLE_FILE.read_text(encoding="utf-8"))
+            data = json.loads(ARTICLE_FILE.read_text(encoding="utf-8"))
+            # Ensure a references section exists (migration for older article_structure.json files)
+            existing_ids = {s["id"] for s in data.get("sections", [])}
+            if "references" not in existing_ids:
+                data.setdefault("sections", []).append(
+                    {"id": "references", "title": "References", "target_words": 0, "done": False}
+                )
+                save_article_structure(data)
+            return data
         except Exception:
             pass
     return json.loads(json.dumps(DEFAULT_ARTICLE))
@@ -1243,6 +1252,100 @@ with tab_sections:
                 label_visibility="collapsed",
                 placeholder="Reminders, flagged citations, TODOs…",
             )
+
+        # ── Auto-generate references (only for the references section) ──
+        _REF_IDS = {"references", "literature", "bibliography", "reference_list"}
+        if sec_id in _REF_IDS or any(x in sec_id for x in ("ref", "lit", "bib")):
+            with st.expander("📚 Auto-generate reference list", expanded=False):
+                st.caption(
+                    "Builds a formatted reference list from your review pool and/or megatrend "
+                    "sources. The result is placed in the text area above where you can edit it."
+                )
+                rg1, rg2 = st.columns(2)
+                with rg1:
+                    rg_verdict = st.selectbox(
+                        "Include pool papers",
+                        ["Included only", "Included + Unsure", "None"],
+                        key="rg_verdict_sel",
+                    )
+                with rg2:
+                    rg_mega = st.checkbox("Add megatrend sources (Strategy 2)", value=False,
+                                          key="rg_mega_cb")
+
+                if st.button("⚙️ Generate reference list", type="primary"):
+                    refs = []
+
+                    # Pool papers
+                    if rg_verdict != "None":
+                        _pool = load_pool()
+                        if rg_verdict == "Included only":
+                            _pool = _pool[_pool["user_verdict"] == "include"]
+                        else:
+                            _pool = _pool[_pool["user_verdict"].isin(["include", "unsure"])]
+
+                        for _, row in _pool.iterrows():
+                            authors_raw = str(row.get("authors", "")).strip()
+                            year   = str(row.get("year",    "")).strip()
+                            title  = str(row.get("title",   "")).strip()
+                            journal= str(row.get("journal", "")).strip()
+                            doi    = str(row.get("doi",     "")).strip()
+
+                            # APA-style author formatting
+                            raw_parts = [p.strip().rstrip(".") for p in
+                                         authors_raw.replace(" et al.", "").split(";") if p.strip()]
+                            apa = []
+                            for p in raw_parts:
+                                tokens = p.split()
+                                if len(tokens) >= 2:
+                                    initials = " ".join(t[0].upper() + "." for t in tokens[:-1])
+                                    apa.append(f"{tokens[-1]}, {initials}")
+                                else:
+                                    apa.append(p)
+                            if "et al." in authors_raw and apa:
+                                author_str = apa[0] + " et al."
+                            elif len(apa) > 1:
+                                author_str = ", ".join(apa[:-1]) + ", & " + apa[-1]
+                            else:
+                                author_str = apa[0] if apa else "Unknown"
+
+                            ref = f"{author_str} ({year}). {title}."
+                            if journal:
+                                ref += f" *{journal}*."
+                            if doi:
+                                ref += f" https://doi.org/{doi}"
+                            refs.append(ref)
+
+                    # Megatrend sources
+                    if rg_mega:
+                        excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
+                        mega_refs = load_megatrends(excel_mt)
+                        seen_titles: set = set()
+                        for _, row in mega_refs.iterrows():
+                            author = str(row.get("author", "")).strip()
+                            title  = str(row.get("title",  "")).strip()
+                            source = str(row.get("source", "")).strip()
+                            doi    = str(row.get("doi",    "")).strip()
+                            year_v = row.get("year")
+                            year   = str(int(year_v)) if pd.notna(year_v) else ""
+                            key    = (author, title)
+                            if key in seen_titles or not (author or title):
+                                continue
+                            seen_titles.add(key)
+                            ref = f"{author} ({year}). {title}."
+                            if source:
+                                ref += f" {source}."
+                            if doi:
+                                ref += f" https://doi.org/{doi}"
+                            refs.append(ref)
+
+                    refs.sort(key=str.lower)
+                    ref_text = "\n\n".join(refs)
+                    st.session_state[sec_key] = ref_text
+                    _secs = load_sections()
+                    _secs[sec_id] = ref_text
+                    save_sections(_secs)
+                    st.success(f"Generated {len(refs)} references — edit in the text area above.")
+                    st.rerun()
 
         st.markdown("---")
         st.markdown("**Full article draft**")
