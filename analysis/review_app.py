@@ -1468,20 +1468,24 @@ with tab_search:
             status.update(label=f"Done — {len(deduped)} unique records found", state="complete")
         st.session_state.search_preview = deduped
 
+    st.markdown("---")
+    st.markdown("#### Results")
+
     preview = st.session_state.search_preview
-    if preview:
+    if not preview:
+        st.caption("No results yet — run a search above.")
+    else:
         existing_ids = set(pool["openalex_id"].tolist())
         n_new = sum(1 for r in preview if r["openalex_id"] not in existing_ids)
         n_dup = len(preview) - n_new
 
-        st.markdown(f"#### Search results: {len(preview)} records")
-        info_col, btn_col = st.columns([3, 1])
-        with info_col:
+        res_info, res_btn = st.columns([3, 1])
+        with res_info:
             st.info(
-                f"**{n_new}** new  ·  **{n_dup}** already in pool  ·  "
+                f"**{len(preview)}** records — **{n_new}** new · **{n_dup}** already in pool  ·  "
                 f"Pool grows from **{total}** → **{total + n_new}**"
             )
-        with btn_col:
+        with res_btn:
             if st.button(f"➕ Add {n_new} papers", type="primary",
                          use_container_width=True, disabled=(n_new == 0)):
                 with st.spinner("Scoring and saving…"):
