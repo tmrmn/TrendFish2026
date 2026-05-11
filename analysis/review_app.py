@@ -1592,37 +1592,6 @@ Multi-word phrases are auto-quoted. Parentheses are supported by OpenAlex.
             )
 
 
-    # ── PRISMA flow summary ────────────────────────────────────
-    st.markdown("---")
-    st.markdown("#### PRISMA flow summary (live)")
-    _pr_strategy = load_search_strategy()
-    _pr_s1       = _pr_strategy.get("strategy1", {})
-    _pr_excel_mt = EXCEL_FILE.stat().st_mtime if EXCEL_FILE.exists() else 0.0
-    _pr_mega_cnt = len(load_megatrends(_pr_excel_mt))
-    _pr_sig_cnt  = len(st.session_state.signals)
-    _pr_n_inc    = int((pool["user_verdict"] == "include").sum()) if total else 0
-
-    pc1, pc2, pc3 = st.columns(3)
-    with pc1:
-        st.markdown("**Strategy 1 — automated**")
-        for label, val in [
-            ("Retrieved",  _pr_s1.get("n_retrieved", "?")),
-            ("After dedup",_pr_s1.get("n_deduped",   "?")),
-            ("Screened",   _pr_s1.get("n_screened",   "?")),
-            ("In pool",    total),
-            ("Reviewed",   n_reviewed),
-            ("Included",   _pr_n_inc),
-        ]:
-            st.metric(label, val)
-    with pc2:
-        st.markdown("**Strategy 1 — manual**")
-        st.metric("Manual inclusions", _pr_s1.get("n_manual", "?"))
-        st.markdown("**Strategy 2**")
-        st.metric("Megatrend entries", _pr_mega_cnt)
-    with pc3:
-        st.markdown("**Strategy 3**")
-        st.metric("Signals documented", _pr_sig_cnt)
-
 
 # ══════════════════════════════════════════════════════════════
 # TAB 5 — REVIEW
