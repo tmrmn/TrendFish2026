@@ -1625,7 +1625,7 @@ with tab_review:
             st.rerun()
 
         st.markdown("")
-        st.markdown("**Export**")
+        st.markdown("**Export literature**")
         exp_col1, exp_col2, exp_col3 = st.columns([1, 1, 2])
         with exp_col1:
             st.download_button("⬇️ Full pool (CSV)",
