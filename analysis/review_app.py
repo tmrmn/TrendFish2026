@@ -961,7 +961,7 @@ Progress saved to `data/` automatically.
 
 (tab_article, tab_sections, tab_strategy,
  tab_search, tab_review, tab_analysis, tab_draft, tab_outputs) = st.tabs([
-    "📋 Article", "📝 Sections", "🔎 Search Strategy Planner",
+    "📋 Article", "📝 Sections", "🔎 Search Strategy",
     "🔍 Search", "📄 Review", "📊 Analysis", "✍️ Draft", "📤 Outputs",
 ])
 
