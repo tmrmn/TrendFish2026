@@ -1193,7 +1193,7 @@ with tab_sections:
             save_sections(secs)
 
         st.text_area(
-            "Notes / AI input",
+            "Draft / Notes",
             key=notes_key,
             height=380,
             on_change=_autosave_notes,
