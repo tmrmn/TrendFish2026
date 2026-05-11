@@ -986,8 +986,6 @@ with tab_article:
             with a1:
                 new_title   = st.text_input("Title", value=article.get("title",""))
                 new_journal = st.text_input("Target journal", value=article.get("target_journal",""))
-                new_max_wc  = st.number_input("Word limit", min_value=1000, max_value=30000,
-                                              value=int(article.get("max_words", 12000)), step=500)
             with a2:
                 new_subtitle = st.text_input("Subtitle", value=article.get("subtitle",""))
 
@@ -1027,7 +1025,6 @@ with tab_article:
                 article["title"]              = new_title
                 article["subtitle"]           = new_subtitle
                 article["target_journal"]     = new_journal
-                article["max_words"]          = int(new_max_wc)
                 article["authors"]            = edited_authors.dropna(how="all").to_dict("records")
                 article["keywords"]           = [k for k in edited_kws["keyword"].dropna().tolist() if k]
                 article["research_questions"] = [q for q in edited_rqs["question"].dropna().tolist() if q]
@@ -1064,6 +1061,8 @@ with tab_article:
 
         st.markdown("**Section outline** — edit target word counts below and save.")
         with st.form("section_outline_form"):
+            new_max_wc = st.number_input("Word limit", min_value=1000, max_value=30000,
+                                         value=max_words, step=500)
             edited_sec = st.data_editor(
                 sec_df[["done","id","title","target_words","actual_words"]],
                 num_rows="dynamic", use_container_width=True, key="secoutline_de",
@@ -1087,7 +1086,8 @@ with tab_article:
                             "target_words": int(row.get("target_words", 0) or 0),
                             "done":         bool(row.get("done", False)),
                         })
-                article["sections"] = new_sections
+                article["sections"]  = new_sections
+                article["max_words"] = int(new_max_wc)
                 save_article_structure(article)
                 st.success("Section outline saved.")
 
