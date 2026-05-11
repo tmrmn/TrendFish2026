@@ -1752,23 +1752,6 @@ Filter by AI colour or review status below. Verdicts save automatically.
                 f"<span style='color:#555;font-size:0.9rem;margin-left:10px'>{sc['reason']}</span>"
                 f"</div>", unsafe_allow_html=True,
             )
-            if _rv:
-                _rv_icon, _rv_label, _rv_bg, _rv_col = VERDICTS[_rv]
-                st.markdown(
-                    f"<div style='background:{_rv_bg};border:1px solid {_rv_col};"
-                    f"border-radius:8px;padding:10px 14px;margin-top:6px'>"
-                    f"<span style='font-size:1.1rem;font-weight:700;color:{_rv_col}'>"
-                    f"● Reviewer: {_rv_label}</span>"
-                    + (f"<span style='color:#555;font-size:0.9rem;margin-left:10px'>{_rv_notes}</span>" if _rv_notes else "")
-                    + f"</div>", unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    "<div style='background:#f8f9fa;border:1px solid #dee2e6;"
-                    "border-radius:8px;padding:10px 14px;margin-top:6px'>"
-                    "<span style='font-size:1.1rem;color:#aaa'>● Reviewer: not yet reviewed</span>"
-                    "</div>", unsafe_allow_html=True,
-                )
         with sc_right:
             st.markdown(
                 f"<div style='text-align:center;font-size:0.85rem;padding-top:10px'>"
@@ -1807,6 +1790,24 @@ Filter by AI colour or review status below. Verdicts save automatically.
                 for t in sc["bio"]:   st.markdown(f"<div class='kw-match' style='color:#dc3545'>🧬 {t}</div>", unsafe_allow_html=True)
                 for t in sc["nonfish"]: st.markdown(f"<div class='kw-match' style='color:#dc3545'>🚫 {t}</div>", unsafe_allow_html=True)
                 if not (sc["retro"] + sc["bio"] + sc["nonfish"]): st.caption("none")
+
+        if _rv:
+            _rv_icon, _rv_label, _rv_bg, _rv_col = VERDICTS[_rv]
+            st.markdown(
+                f"<div style='background:{_rv_bg};border:1px solid {_rv_col};"
+                f"border-radius:8px;padding:10px 14px;margin-top:6px'>"
+                f"<span style='font-size:1.1rem;font-weight:700;color:{_rv_col}'>"
+                f"● Reviewer: {_rv_label}</span>"
+                + (f"<span style='color:#555;font-size:0.9rem;margin-left:10px'>{_rv_notes}</span>" if _rv_notes else "")
+                + "</div>", unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                "<div style='background:#f8f9fa;border:1px solid #dee2e6;"
+                "border-radius:8px;padding:10px 14px;margin-top:6px'>"
+                "<span style='font-size:1.1rem;color:#aaa'>● Reviewer: not yet reviewed</span>"
+                "</div>", unsafe_allow_html=True,
+            )
 
         title   = str(row.get("title",   "")).strip() or "(no title)"
         authors = str(row.get("authors", "")).strip()
